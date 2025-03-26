@@ -210,7 +210,6 @@
       };
     </script>
     @if (Session::get('purchase_event'))
-        //
         <script type="text/javascript">
             window.dataLayer = window.dataLayer || [];
             dataLayer.push({

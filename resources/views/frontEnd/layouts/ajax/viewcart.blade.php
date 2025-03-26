@@ -1,28 +1,6 @@
-@extends('frontEnd.layouts.master') @section('title','Shopping Cart') @section('content')
-<section class="breadcrumb-section">
- <div class="container">
-  <div class="row">
-   <div class="col-sm-12">
-    <div class="custom-breadcrumb">
-     <ul>
-      <li><a href="{{route('home')}}">Home </a></li>
-      <li>
-       <a><i class="fa-solid fa-angles-right"></i> </a>
-      </li>
-      <li><a href="">Shopping Cart</a></li>
-     </ul>
-    </div>
-   </div>
-  </div>
- </div>
-</section>
-<!-- breadcrumb end -->
-<section class="vcart-section">
- @php $subtotal = Cart::instance('shopping')->subtotal(); $subtotal=str_replace(',','',$subtotal); $subtotal=str_replace('.00', '',$subtotal); view()->share('subtotal',$subtotal); $shipping =
+  @php $subtotal = Cart::instance('shopping')->subtotal(); $subtotal=str_replace(',','',$subtotal); $subtotal=str_replace('.00', '',$subtotal); view()->share('subtotal',$subtotal); $shipping =
  Session::get('shipping')?Session::get('shipping'):0; $discount = Session::get('discount')?Session::get('discount'):0; @endphp
- <div class="container">
-  <div class="row" id="cartlists">
-   <div class="col-sm-9">
+  <div class="col-sm-9">
     <div class="vcart-inner">
      <div class="cart-title">
       <h4>Shopping Cart</h4>
@@ -106,7 +84,3 @@
      <a href="{{route('customer.checkout')}}" class="go_cart">Process To Checkout</a>
     </div>
    </div>
-  </div>
- </div>
-</section>
-@endsection

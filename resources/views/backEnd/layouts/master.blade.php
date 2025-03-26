@@ -467,7 +467,7 @@
                                         <a href="{{ route('shippingcharges.index') }}"><i
                                                 data-feather="minus"></i> Shipping Charge</a>
                                     </li>
-                                    
+
                                      <li>
                                         <a href="{{route('shippingdiscount.index')}}"><i data-feather="file-plus"></i> Shipping Discount</a>
                                     </li>
@@ -475,7 +475,11 @@
                                         <a href="{{ route('orderstatus.index') }}"><i data-feather="minus"></i>
                                             Order Status</a>
                                     </li>
-                                    
+                                    <li>
+                                        <a href="{{ route('timeslots.index') }}"><i data-feather="minus"></i>
+                                            Time Slots</a>
+                                    </li>
+
                                     <li>
                                         <a href="{{ route('pages.index') }}"><i data-feather="minus"></i> Create Page</a>
                                     </li>

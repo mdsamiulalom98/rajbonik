@@ -12,7 +12,7 @@
     </p>
  </button>
 </a>
-<div class="cshort-summary">
+<!-- <div class="cshort-summary">
     <ul>
         @foreach (Cart::instance('shopping')->content() as $key => $value)
             <li><a href=""><img src="{{ asset($value->options->image) }}" alt=""></a></li>
@@ -26,7 +26,7 @@
     </ul>
     <p><strong>TOTAL : ৳{{ $subtotal }}</strong></p>
     <a href="{{ route('customer.checkout') }}" class="go_cart"> Order Now</a>
-</div>
+</div> -->
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.js"></script>
 <script>

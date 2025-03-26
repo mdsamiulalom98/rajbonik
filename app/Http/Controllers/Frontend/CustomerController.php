@@ -14,16 +14,17 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Gloudemans\Shoppingcart\Facades\Cart;
-use App\Models\Customer;
-use App\Models\District;
-use App\Models\Order;
+use App\Models\CustomerAddress;
+use App\Models\PaymentGateway;
 use App\Models\ShippingCharge;
 use App\Models\OrderDetails;
-use App\Models\Payment;
-use App\Models\Shipping;
-use App\Models\Review;
-use App\Models\PaymentGateway;
 use App\Models\SmsGateway;
+use App\Models\Shipping;
+use App\Models\Customer;
+use App\Models\District;
+use App\Models\Payment;
+use App\Models\Review;
+use App\Models\Order;
 use App\Models\GeneralSetting;
 use App\Models\CouponCode;
 use Mail;
@@ -33,7 +34,7 @@ class CustomerController extends Controller
 
     function __construct()
     {
-        $this->middleware('customer', ['except' => ['register', 'customer_coupon', 'coupon_remove', 'store', 'verify', 'resendotp', 'account_verify', 'login', 'signin', 'logout', 'checkout', 'forgot_password', 'forgot_verify', 'forgot_reset', 'forgot_store', 'forgot_resend', 'order_save', 'order_success', 'order_track', 'order_track_result','hostellogin']]);
+        $this->middleware('customer', ['except' => ['register', 'customer_coupon', 'coupon_remove', 'store', 'verify', 'resendotp', 'account_verify', 'login', 'signin', 'logout', 'checkout', 'forgot_password', 'forgot_verify', 'forgot_reset', 'forgot_store', 'forgot_resend', 'order_save', 'order_success', 'order_track', 'order_track_result', 'hostellogin']]);
     }
     public function customer_coupon(Request $request)
     {
@@ -51,7 +52,7 @@ class CustomerController extends Controller
                 if ($totalcart >= $findcoupon->buy_amount) {
                     if ($totalcart >= $findcoupon->buy_amount) {
                         if ($findcoupon->offer_type == 1) {
-                            $discountammount =  (($totalcart * $findcoupon->amount) / 100);
+                            $discountammount = (($totalcart * $findcoupon->amount) / 100);
                             Session::forget('coupon_amount');
                             Session::put('coupon_amount', $discountammount);
                             Session::put('coupon_used', $findcoupon->coupon_code);
@@ -89,14 +90,14 @@ class CustomerController extends Controller
         ]);
 
         // data save
-        $review              =   new Review();
-        $review->name        =   Auth::guard('customer')->user()->name ? Auth::guard('customer')->user()->name : 'N / A';
-        $review->email       =   Auth::guard('customer')->user()->email ? Auth::guard('customer')->user()->email : 'N / A';
-        $review->product_id  =   $request->product_id;
-        $review->review      =   $request->review;
-        $review->ratting     =   $request->ratting;
-        $review->customer_id =   Auth::guard('customer')->user()->id;
-        $review->status      =   'pending';
+        $review = new Review();
+        $review->name = Auth::guard('customer')->user()->name ? Auth::guard('customer')->user()->name : 'N / A';
+        $review->email = Auth::guard('customer')->user()->email ? Auth::guard('customer')->user()->email : 'N / A';
+        $review->product_id = $request->product_id;
+        $review->review = $request->review;
+        $review->ratting = $request->ratting;
+        $review->customer_id = Auth::guard('customer')->user()->id;
+        $review->status = 'pending';
         $review->save();
 
         Toastr::success('Thanks, Your review send successfully', 'Success!');
@@ -120,7 +121,7 @@ class CustomerController extends Controller
         // return $auth_check;
         if ($auth_check) {
             if (Auth::guard('customer')->attempt(['phone' => $request->phone, 'password' => $request->password])) {
-                if($request->review == 1){
+                if ($request->review == 1) {
                     return redirect()->back();
                 }
                 if (Cart::instance('shopping')->count() > 0) {
@@ -130,12 +131,10 @@ class CustomerController extends Controller
                 if ($auth_check->customer_type == 'hostel' && $request->customer_type == 'hostel') {
                     Toastr::success('You are login successfully', 'success!');
                     return redirect()->route('hostel.dashboard');
-                }elseif ($auth_check->customer_type == 'normal' && $request->customer_type == 'normal') {
+                } elseif ($auth_check->customer_type == 'normal' && $request->customer_type == 'normal') {
                     Toastr::success('You are login successfully', 'success!');
                     return redirect()->intended('customer/account');
                 }
-
-                
             }
             Toastr::error('message', 'Opps! your phone or password wrong');
             return redirect()->back();
@@ -150,28 +149,86 @@ class CustomerController extends Controller
         return view('frontEnd.layouts.customer.register');
     }
 
+    public function address_create(Request $request)
+    {
+        $this->validate($request, [
+            'name' => 'required',
+            'phone' => 'required',
+        ]);
+
+        $store = new CustomerAddress();
+        $store->name = $request->name;
+        $store->customer_id = Auth::guard('customer')->user()->id;
+        $store->phone = $request->phone ?? '';
+        $store->district = $request->district ?? '';
+        $store->area_id = $request->area_id ?? '';
+        $store->house_no = $request->house_no ?? '';
+        $store->floor_no = $request->floor_no ?? '';
+        $store->block = $request->block ?? '';
+        $store->flat_no = $request->flat_no ?? '';
+        $store->road_no = $request->road_no ?? '';
+        $store->label = 'home';
+        $store->active = 1;
+        $store->save();
+
+        $message = 'Account Create Successfully';
+        return response()->json(['status' => 'success', 'message' => $message]);
+    }
+    
+   public function address_update(Request $request)
+    {
+        $this->validate($request, [
+            'id' => 'required|exists:customer_addresses,id',
+            'name' => 'required',
+            'phone' => 'required',
+        ]);
+
+        // Find the existing address by ID
+        $store = CustomerAddress::find($request->id);
+
+        // Check if the logged-in user owns this address
+        if ($store->customer_id !== Auth::guard('customer')->user()->id) {
+            return response()->json(['status' => 'error', 'message' => 'Unauthorized access'], 403);
+        }
+
+        // Update the address fields
+        $store->name = $request->name;
+        $store->phone = $request->phone ?? '';
+        $store->district = $request->district ?? '';
+        $store->area_id = $request->area_id ?? '';
+        $store->house_no = $request->house_no ?? '';
+        $store->floor_no = $request->floor_no ?? '';
+        $store->block = $request->block ?? '';
+        $store->flat_no = $request->flat_no ?? '';
+        $store->road_no = $request->road_no ?? '';
+        $store->label = 'home';
+        $store->active = 1;
+        $store->save();
+
+    return response()->json(['status' => 'success', 'message' => 'Address updated successfully']);
+    }
+
+
     public function store(Request $request)
     {
         $this->validate($request, [
-            'name'    => 'required',
-            'phone'    => 'required|unique:customers',
+            'name' => 'required',
+            'phone' => 'required|unique:customers',
             'password' => 'required|min:6'
         ]);
 
         $last_id = Customer::orderBy('id', 'desc')->first();
         $last_id = $last_id ? $last_id->id + 1 : 1;
-        $store              = new Customer();
-        $store->name        = $request->name;
-        $store->slug        = strtolower(Str::slug($request->name . '-' . $last_id));
-        $store->phone       = $request->phone ?? '';
-        $store->email       = $request->email ?? '';
-        $store->password    = bcrypt($request->password);
-        $store->customer_type= 'normal' ?? '';
-        $store->verify      = 1;
-        $store->status      = 'active';
+        $store = new Customer();
+        $store->name = $request->name;
+        $store->slug = strtolower(Str::slug($request->name . '-' . $last_id));
+        $store->phone = $request->phone ?? '';
+        $store->email = $request->email ?? '';
+        $store->password = bcrypt($request->password);
+        $store->customer_type = 'normal' ?? '';
+        $store->verify = 1;
+        $store->status = 'active';
         $store->save();
-
-       
 
         Toastr::success('Success', 'Account Create Successfully');
         return redirect()->route('customer.login');
@@ -299,12 +356,11 @@ class CustomerController extends Controller
         if (!Session::get('verify_phone')) {
             Toastr::error('Something wrong please try again');
             return redirect()->route('customer.forgot.password');
-        };
+        }
         return view('frontEnd.layouts.customer.forgot_reset');
     }
     public function forgot_store(Request $request)
     {
-
         $customer_info = Customer::where('phone', session::get('verify_phone'))->first();
 
         if ($customer_info->forgot != $request->otp) {
@@ -331,32 +387,70 @@ class CustomerController extends Controller
         Toastr::success('You are logout successfully', 'success!');
         return redirect()->route('customer.login');
     }
+    // public function checkout()
+    // {
+    //     $shippingcharge = ShippingCharge::where(['status' => 1, 'website' => 1])->get();
+    //     $select_charge = ShippingCharge::where(['status' => 1, 'website' => 1])->first();
+    //     $bkash_gateway = PaymentGateway::where(['status' => 1, 'type' => 'bkash'])->first();
+    //     $shurjopay_gateway = PaymentGateway::where(['status' => 1, 'type' => 'shurjopay'])->first();
+
+    //     if (Session::get('free_shipping') == 1) {
+    //         Session::put('shipping', 0);
+    //     } else {
+    //         Session::put('shipping', $select_charge->amount);
+    //     }
+    //     $districts = District::distinct()->select('district')->orderBy('district', 'asc')->get();
+    //     return view('frontEnd.layouts.customer.checkout', compact('shippingcharge', 'bkash_gateway', 'shurjopay_gateway', 'districts'));
+    // }
     public function checkout()
     {
-        $shippingcharge = ShippingCharge::where(['status' => 1, 'website' => 1])->get();
-        $select_charge = ShippingCharge::where(['status' => 1, 'website' => 1])->first();
+        if (Auth::guard('customer')->user()) {
+           $customer_id = Auth::guard('customer')->user()->id;
+           $customer_addresses = CustomerAddress::where(['customer_id' => $customer_id])->get();
+           $selected_address = CustomerAddress::where(['customer_id' => $customer_id, 'active' => 1])->first();
+        }else{
+            $customer_addresses = [];
+            $selected_address = [];
+        }
+
         $bkash_gateway = PaymentGateway::where(['status' => 1, 'type' => 'bkash'])->first();
         $shurjopay_gateway = PaymentGateway::where(['status' => 1, 'type' => 'shurjopay'])->first();
-        
-        if (Session::get('free_shipping') == 1) {
-            Session::put('shipping', 0);
-        } else {
-            Session::put('shipping', $select_charge->amount);
-        }
-        $districts = District::distinct()->select('district')->orderBy('district', 'asc')->get();
-        return view('frontEnd.layouts.customer.checkout', compact('shippingcharge', 'bkash_gateway','shurjopay_gateway', 'districts'));
+        $shippingcharge = ShippingCharge::where(['status' => 1, 'website' => 1])->get();
+        return view('frontEnd.layouts.customer.address', compact('customer_addresses', 'selected_address','shippingcharge','shurjopay_gateway','bkash_gateway'));
     }
-    public function address(){
-        return view('frontEnd.layouts.customer.address');
+
+    public function select_address(Request $request)
+    {
+        $customer_id = Auth::guard('customer')->user()->id;
+        Session::put('session_address', 1);
+        CustomerAddress::where('customer_id', $customer_id)->update(['active' => 0]);
+        CustomerAddress::where('id', $request->id)->update(['active' => 1]);
+        $customer_addresses = CustomerAddress::where(['customer_id' => $customer_id])->get();
+        $selected_address = CustomerAddress::where(['customer_id' => $customer_id, 'active' => 1])->first();
+        $updatedHtml = view('frontEnd.layouts.ajax.customeraddresses', ['customer_addresses' => $customer_addresses, 'selected_address' => $selected_address])->render();
+
+        return response()->json([
+            'success' => true,
+            'updatedHtml' => $updatedHtml,
+        ]);
     }
+    public function change_address(Request $request)
+    {
+        $customer_id = Auth::guard('customer')->user()->id;
+        Session::forget('session_address');
+        $customer_addresses = CustomerAddress::where(['customer_id' => $customer_id])->get();
+        $selected_address = CustomerAddress::where(['customer_id' => $customer_id, 'active' => 1])->first();
+        $updatedHtml = view('frontEnd.layouts.ajax.customeraddresses', ['customer_addresses' => $customer_addresses, 'selected_address' => $selected_address])->render();
+
+        return response()->json([
+            'success' => true,
+            'updatedHtml' => $updatedHtml,
+        ]);
+    }
+
     public function order_save(Request $request)
     {
-        $this->validate($request, [
-            'name' => 'required',
-            'phone' => 'required',
-            'address' => 'required',
-        ]);
-        
+        // return $request->all();
         if (Cart::instance('shopping')->count() <= 0) {
             Toastr::error('Your shopping empty', 'Failed!');
             return redirect()->back();
@@ -366,15 +460,16 @@ class CustomerController extends Controller
             Toastr::error('Your shopping empty', 'Failed!');
             return redirect()->back();
         }
+        
 
         $subtotal = Cart::instance('shopping')->subtotal();
         $subtotal = str_replace(',', '', $subtotal);
         $subtotal = str_replace('.00', '', $subtotal);
         $discount = Session::get('discount') + Session::get('coupon_amount');
-        $shippingfee  = Session::get('free_shipping') ? 0 : Session::get('shipping');
+        $shippingfee = Session::get('free_shipping') ? 0 : Session::get('shipping');
         $amount = ($subtotal + $shippingfee) - $discount;
 
-        $shipping_area  = ShippingCharge::where('id', $request->area)->first();
+        $shipping_area = ShippingCharge::where('id', $request->area)->first();
         if (Auth::guard('customer')->user()) {
             $customer_id = Auth::guard('customer')->user()->id;
         } else {
@@ -383,64 +478,96 @@ class CustomerController extends Controller
                 $customer_id = $exits_customer->id;
             } else {
                 $password = rand(111111, 999999);
-                $store              = new Customer();
-                $store->name        = $request->name;
-                $store->slug        = $request->name;
-                $store->phone       = $request->phone;
-                $store->password    = bcrypt($password);
-                $store->verify      = 1;
-                $store->status      = 'active';
+                $store = new Customer();
+                $store->name = $request->name;
+                $store->slug = $request->name;
+                $store->phone = $request->phone;
+                $store->password = bcrypt($password);
+                $store->verify = 1;
+                $store->status = 'active';
+                $store->customer_type = 'normal';
                 $store->save();
                 $customer_id = $store->id;
+
+                $store = new CustomerAddress();
+                $store->name = $request->name;
+                $store->customer_id = $customer_id;
+                $store->phone = $request->phone ?? '';
+                $store->district = $request->district ?? '';
+                $store->area_id = $request->area_id ?? '';
+                $store->house_no = $request->house_no ?? '';
+                $store->floor_no = $request->floor_no ?? '';
+                $store->block = $request->block ?? '';
+                $store->flat_no = $request->flat_no ?? '';
+                $store->road_no = $request->road_no ?? '';
+                $store->label = 'home';
+                $store->active = 1;
+                $store->save();
             }
         }
+        $customer_address = CustomerAddress::where(['customer_id' => $customer_id, 'active' => 1])->first();
+        if(!$customer_address) {
+            Toastr::error('Your address is empty', 'Failed!');
+            return redirect()->back();
+        }
+        
         // order data save
-        $order                   = new Order();
-        $order->invoice_id       = rand(11111, 99999);
-        $order->amount           = $amount;
-        $order->customer_type    = 'normal';
-        $order->discount         = $discount ? $discount : 0;
-        $order->shipping_charge  = $shippingfee;
-        $order->customer_id      = $customer_id;
-        $order->customer_ip      = $request->ip();
-        $order->order_type       = Session::get('free_shipping') ? 'digital' : 'goods';
-        $order->order_status     = 1;
-        $order->note             = $request->note;
+        $order = new Order();
+        $order->invoice_id = rand(11111, 99999);
+        $order->amount = $amount;
+        $order->customer_type = 'normal';
+        $order->discount = $discount ? $discount : 0;
+        $order->shipping_charge = $shippingfee ?? 0;
+        $order->customer_id = $customer_id;
+        $order->customer_ip = $request->ip();
+        $order->order_type = Session::get('free_shipping') ? 'digital' : 'goods';
+        $order->order_status = 1;
+        $order->delivery_date = $request->order_date;
+        $order->delivery_time = $request->order_time;
+        $order->note = $request->note ?? '';
         $order->save();
 
+        $complete_address = trim(implode(', ', array_filter([
+            $customer_address->flat_no ? "Flat No: {$customer_address->flat_no}" : null,
+            $customer_address->floor_no ? "Floor: {$customer_address->floor_no}" : null,
+            $customer_address->house_no ? "House: {$customer_address->house_no}" : null,
+            $customer_address->road_no ? "Road: {$customer_address->road_no}" : null,
+            $customer_address->area_id,
+            $customer_address->district
+        ])));
         // shipping data save
-        $shipping              =   new Shipping();
-        $shipping->order_id    =   $order->id;
-        $shipping->customer_id =   $customer_id;
-        $shipping->name        =   $request->name;
-        $shipping->phone       =   $request->phone;
-        $shipping->address     =   $request->address;
-        $shipping->area        =   $shipping_area ? $shipping_area->name : 'Free Shipping';
+        $shipping = new Shipping();
+        $shipping->order_id = $order->id;
+        $shipping->customer_id = $customer_id;
+        $shipping->name = $customer_address->name;
+        $shipping->phone = $customer_address->phone;
+        $shipping->address = $complete_address ?? '';
+        $shipping->area = $shipping_area ? $shipping_area->name : 'Free Shipping';
         $shipping->save();
 
         // payment data save
-        $payment                 = new Payment();
-        $payment->order_id       = $order->id;
-        $payment->customer_id    = $customer_id;
-        $payment->payment_method = $request->payment_method;
-        $payment->amount         = $order->amount;
+        $payment = new Payment();
+        $payment->order_id = $order->id;
+        $payment->customer_id = $customer_id;
+        $payment->payment_method = 'Cash On Delivery';
+        $payment->amount = $order->amount;
         $payment->payment_status = 'pending';
         $payment->save();
 
         // order details data save
         foreach (Cart::instance('shopping')->content() as $cart) {
             // return $cart;
-            $order_details                  =   new OrderDetails();
-            $order_details->order_id        =   $order->id;
-            $order_details->product_id      =   $cart->id;
-            $order_details->product_name    =   $cart->name;
-            $order_details->sale_price      =   $cart->price;
-            $order_details->purchase_price  =   $cart->options->purchase_price;
-            $order_details->product_color   =   $cart->options->product_color;
-            $order_details->product_size    =   $cart->options->product_size;
-            $order_details->product_size    =   $cart->options->product_size;
-            $order_details->product_type    =   $cart->options->type;
-            $order_details->qty             =   $cart->qty;
+            $order_details = new OrderDetails();
+            $order_details->order_id = $order->id;
+            $order_details->product_id = $cart->id;
+            $order_details->product_name = $cart->name;
+            $order_details->sale_price = $cart->price;
+            $order_details->purchase_price = $cart->options->purchase_price;
+            $order_details->product_color = $cart->options->product_color;
+            $order_details->product_size = $cart->options->product_size;
+            $order_details->product_size = $cart->options->product_size;
+            $order_details->product_type = $cart->options->type;
+            $order_details->qty = $cart->qty;
             $order_details->save();
         }
 
@@ -480,7 +607,7 @@ class CustomerController extends Controller
                 'discsount_amount' => 0,
                 'disc_percent' => 0,
                 'client_ip' => $request->ip(),
-                'customer_name' =>  $request->name,
+                'customer_name' => $request->name,
                 'customer_phone' => $request->phone,
                 'email' => "customer@gmail.com",
                 'customer_address' => $request->address,
@@ -513,7 +640,7 @@ class CustomerController extends Controller
 
         $orders = Order::where(['id' => $request->id, 'customer_id' => Auth::guard('customer')->user()->id])->with('orderdetails')->first();
         // return $orders;
-        return view('frontEnd.layouts.customer.invoice', compact('order','orders'));
+        return view('frontEnd.layouts.customer.invoice', compact('order', 'orders'));
     }
     public function pdfreader(Request $request)
     {
@@ -521,10 +648,10 @@ class CustomerController extends Controller
 
         $orders = Order::where(['id' => $request->id, 'customer_id' => Auth::guard('customer')->user()->id])->with('orderdetails')->first();
         // return $orders;
-        return view('frontEnd.layouts.customer.pdfreader', compact('order','orders'));
+        return view('frontEnd.layouts.customer.pdfreader', compact('order', 'orders'));
     }
-    
-    
+
+
     public function order_note(Request $request)
     {
         $order = Order::where(['id' => $request->id, 'customer_id' => Auth::guard('customer')->user()->id])->firstOrFail();
@@ -544,7 +671,7 @@ class CustomerController extends Controller
         $image = $request->file('image');
         if ($image) {
             // image with intervention
-            $name =  time() . '-' . $image->getClientOriginalName();
+            $name = time() . '-' . $image->getClientOriginalName();
             $name = preg_replace('"\.(jpg|jpeg|png|webp)$"', '.webp', $name);
             $name = strtolower(Str::slug($name));
             $uploadpath = 'public/uploads/customer/';
@@ -559,13 +686,13 @@ class CustomerController extends Controller
             $imageUrl = $update_data->image;
         }
 
-        $update_data->name        =   $request->name;
-        $update_data->phone       =   $request->phone;
-        $update_data->email       =   $request->email;
-        $update_data->address     =   $request->address;
-        $update_data->district    =   $request->district;
-        $update_data->area        =   $request->area;
-        $update_data->image       =   $imageUrl;
+        $update_data->name = $request->name;
+        $update_data->phone = $request->phone;
+        $update_data->email = $request->email;
+        $update_data->address = $request->address;
+        $update_data->district = $request->district;
+        $update_data->area = $request->area;
+        $update_data->image = $imageUrl;
         $update_data->save();
 
         Toastr::success('Your profile update successfully', 'Success!');

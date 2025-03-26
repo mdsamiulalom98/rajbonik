@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
+use Brian2694\Toastr\Facades\Toastr;
 
 use App\Http\Controllers\Frontend\FrontendController;
 use App\Http\Controllers\Frontend\ShoppingController;
@@ -42,6 +43,7 @@ use App\Http\Controllers\Admin\CouponCodeController;
 use App\Http\Controllers\Admin\DistrictController;
 use App\Http\Controllers\Admin\HostelManageController;
 use App\Http\Controllers\Admin\ShippingDiscountController;
+use App\Http\Controllers\Admin\TimeslotController;
 
 Auth::routes();
 
@@ -52,12 +54,17 @@ Route::get('/cc', function () {
     Artisan::call('view:clear');
     return "Cleared!";
 });
+Route::get('/migrate', function () {
+    Artisan::call('migrate');
+    Toastr::success('Database Migrated!!');
+    return redirect()->back();
+});
 
 Route::post('/customer/coupon', [CustomerController::class, 'customer_coupon'])->name('customer.coupon');
 Route::post('/customer/coupon-remove', [CustomerController::class, 'coupon_remove'])->name('customer.coupon_remove');
 
 Route::get('barcodess', [ProductController::class, 'barcodess'])->name('barcodess.update');
-    
+
 Route::group(['namespace' => 'Frontend', 'middleware' => ['ipcheck', 'check_refer']], function () {
     Route::get('/', [FrontendController::class, 'index'])->name('home');
     Route::get('category/{category}', [FrontendController::class, 'category'])->name('category');
@@ -68,6 +75,11 @@ Route::group(['namespace' => 'Frontend', 'middleware' => ['ipcheck', 'check_refe
     Route::get('livesearch', [FrontendController::class, 'livesearch'])->name('livesearch');
     Route::get('search', [FrontendController::class, 'search'])->name('search');
     Route::get('product/{id}', [FrontendController::class, 'details'])->name('product');
+
+    Route::get('view/cart', [FrontendController::class, 'viewCart'])->name('viewCart');
+    Route::get('view/cart/ajax', [FrontendController::class, 'viewCart_ajax'])->name('viewCart.ajax');
+
+    Route::get('cart/list', [FrontendController::class, 'cart__list'])->name('cart__list.ajax');
 
     Route::get('quick-view', [FrontendController::class, 'quickview'])->name('quickview');
     Route::get('invoice-data', [HostelController::class, 'invoiceData'])->name('invoice.data');
@@ -87,13 +99,28 @@ Route::group(['namespace' => 'Frontend', 'middleware' => ['ipcheck', 'check_refe
     Route::get('/payment-success', [FrontEndController::class, 'payment_success'])->name('payment_success');
     Route::get('/payment-cancel', [FrontEndController::class, 'payment_cancel'])->name('payment_cancel');
 
+    Route::get('address-modal-open',[FrontEndController::class, 'address_modal'])->name('customer.address.modal');
+    Route::get('address-edit-modal-open',[FrontEndController::class, 'address_modal_edit'])->name('customer.address.edit.modal');
+    Route::get('address-remove',[FrontEndController::class, 'address_remove'])->name('address.remove');
+
+    Route::get('time-slots',[FrontEndController::class, 'fetchAvailableTimes'])->name('timeslots');
+
+
+    // wishlist route
+    Route::get('wishlist/store', [ShoppingController::class, 'wishlist_store'])->name('wishlist.store');
+    Route::get('wishlist', [ShoppingController::class, 'wishlist_show'])->name('wishlist.show');
+    Route::get('wishlist/remove', [ShoppingController::class, 'wishlist_remove'])->name('wishlist.remove');
+    Route::get('wishlist/count', [ShoppingController::class, 'wishlist_count'])->name('wishlist.count');
+    Route::get('wishlist/summary', [ShoppingController::class, 'wishlist_summary'])->name('wishlist.summary');
+     Route::get('mobile/wishlist/count', [ShoppingController::class, 'mobile__wishlist'])->name('mobile.wishlist.count');
+
     // cart route
     Route::post('cart/store', [ShoppingController::class, 'cart_store'])->name('cart.store');
     Route::post('ajax-cart-store', [ShoppingController::class, 'ajax_cart_store'])->name('ajax.cart.store');
     Route::get('/add-to-cart/{id}/{qty}', [ShoppingController::class, 'addTocartGet']);
-    
+
     Route::get('/add-to-cart-quick', [ShoppingController::class, 'addTocartGetQuick']);
-    
+
     Route::get('shop/cart', [ShoppingController::class, 'cart_show'])->name('cart.show');
     Route::get('cart/remove', [ShoppingController::class, 'cart_remove'])->name('cart.remove');
     Route::get('cart/remove-bn', [ShoppingController::class, 'cart_remove_bn'])->name('cart.remove_bn');
@@ -109,11 +136,11 @@ Route::group(['namespace' => 'Frontend', 'middleware' => ['ipcheck', 'check_refe
     Route::get('cart/content-campaign', [ShoppingController::class, 'cart_content_camp'])->name('cart.content_camp');
 });
 // hostel auth route
-Route::group(['namespace' => 'FrontEnd', 'middleware' => ['check_refer'],'prefix' => 'hostel'], function () {
+Route::group(['namespace' => 'FrontEnd', 'middleware' => ['check_refer'], 'prefix' => 'hostel'], function () {
     Route::get('/product', [HostelController::class, 'hostelProduct'])->name('hostel.product');
     Route::get('/order', [HostelController::class, 'hostelOrder'])->name('hostel.order');
 
-    
+
     Route::post('/signin', [HostelController::class, 'signin'])->name('hostel.signin');
     Route::get('/register', [HostelController::class, 'register'])->name('hostel.register');
     Route::post('/store', [HostelController::class, 'store'])->name('hostel.store');
@@ -139,9 +166,9 @@ Route::group(['namespace' => 'FrontEnd', 'prefix' => 'hostel'], function () {
 
     Route::get('order/orders-edit', [HostelController::class, 'orders_edit_hostel'])->name('order.edit.hostel');
 
-   Route::get('order/updates', [HostelController::class, 'orders_updates'])->name('orders.updates');
+    Route::get('order/updates', [HostelController::class, 'orders_updates'])->name('orders.updates');
 
-   Route::get('orders/updates', [HostelController::class, 'orders_updates_page'])->name('hostel.orders.updates');
+    Route::get('orders/updates', [HostelController::class, 'orders_updates_page'])->name('hostel.orders.updates');
 
     Route::get('order/cart-edit', [HostelController::class, 'cart_edit'])->name('hostel.order.cart_edit');
 
@@ -150,7 +177,7 @@ Route::group(['namespace' => 'FrontEnd', 'prefix' => 'hostel'], function () {
 
     Route::get('order/save', [HostelController::class, 'order_save'])->name('hostel.order.save');
     Route::get('order/clear', [HostelController::class, 'order_clear'])->name('hostel.order.clear');
-    
+
     Route::get('hostel/hprofile', [HostelController::class, 'hprofile'])->name('hostel.hprofile');
 
     Route::get('order/cart-remove', [HostelController::class, 'cart_remove'])->name('hostel.order.cart_remove');
@@ -199,8 +226,9 @@ Route::group(['prefix' => 'customer', 'namespace' => 'Frontend', 'middleware' =>
     Route::get('/checkout', [CustomerController::class, 'checkout'])->name('customer.checkout');
 
     Route::get('/address', [CustomerController::class, 'address'])->name('customer.address');
+    Route::post('/select-address', [CustomerController::class, 'select_address'])->name('customer.address.select');
+    Route::post('/change-address', [CustomerController::class, 'change_address'])->name('customer.address.change');
 
-    
     Route::post('/order-save', [CustomerController::class, 'order_save'])->name('customer.ordersave');
     Route::get('/order-success/{id}', [CustomerController::class, 'order_success'])->name('customer.order_success');
     Route::get('/order-track', [CustomerController::class, 'order_track'])->name('customer.order_track');
@@ -208,9 +236,7 @@ Route::group(['prefix' => 'customer', 'namespace' => 'Frontend', 'middleware' =>
 });
 // customer auth
 Route::group(['prefix' => 'customer', 'namespace' => 'Frontend', 'middleware' => ['customer', 'ipcheck', 'check_refer']], function () {
-
     Route::get('/account', [CustomerController::class, 'account'])->name('customer.account');
-
     Route::get('/orders', [CustomerController::class, 'orders'])->name('customer.orders');
     Route::get('/invoice', [CustomerController::class, 'invoice'])->name('customer.invoice');
     Route::get('/pdf-reader', [CustomerController::class, 'pdfreader'])->name('customer.pdfreader');
@@ -219,6 +245,8 @@ Route::group(['prefix' => 'customer', 'namespace' => 'Frontend', 'middleware' =>
     Route::post('/profile-update', [CustomerController::class, 'profile_update'])->name('customer.profile_update');
     Route::get('/change-password', [CustomerController::class, 'change_pass'])->name('customer.change_pass');
     Route::post('/password-update', [CustomerController::class, 'password_update'])->name('customer.password_update');
+    Route::post('/address-create', [CustomerController::class, 'address_create'])->name('customer.address.create');
+    Route::post('/address-update', [CustomerController::class, 'address_update'])->name('customer.address.update');
 });
 
 Route::group(['namespace' => 'Frontend', 'middleware' => ['ipcheck', 'check_refer']], function () {
@@ -229,7 +257,7 @@ Route::group(['namespace' => 'Frontend', 'middleware' => ['ipcheck', 'check_refe
     Route::get('/payment-success', [ShurjopayControllers::class, 'payment_success'])->name('payment_success');
     Route::get('/payment-cancel', [ShurjopayControllers::class, 'payment_cancel'])->name('payment_cancel');
 });
-    
+
 // unathenticate admin route
 Route::group(['namespace' => 'Admin', 'prefix' => 'admin', 'middleware' => ['customer', 'ipcheck', 'check_refer']], function () {
     Route::get('locked', [DashboardController::class, 'locked'])->name('locked');
@@ -332,8 +360,8 @@ Route::group(['namespace' => 'Admin', 'middleware' => ['auth', 'lock', 'check_re
     Route::post('orderstatus/inactive', [OrderStatusController::class, 'inactive'])->name('orderstatus.inactive');
     Route::post('orderstatus/active', [OrderStatusController::class, 'active'])->name('orderstatus.active');
     Route::post('orderstatus/destroy', [OrderStatusController::class, 'destroy'])->name('orderstatus.destroy');
-     
-    // hostel manage route 
+
+    // hostel manage route
     Route::get('hostel/payment/{status}', [HostelManageController::class, 'payment'])->name('riders.payment');
     Route::get('hostel/invoice/{id}', [HostelManageController::class, 'invoice'])->name('riders.invoice');
     Route::post('hostel/payment/status', [HostelManageController::class, 'payment_status'])->name('riders.payment.status');
@@ -392,6 +420,17 @@ Route::group(['namespace' => 'Admin', 'middleware' => ['auth', 'lock', 'check_re
     Route::post('tag-manager/active', [TagManagerController::class, 'active'])->name('tagmanagers.active');
     Route::post('tag-manager/destroy', [TagManagerController::class, 'destroy'])->name('tagmanagers.destroy');
 
+    // timeslots
+    Route::get('time-slot/manage', [TimeslotController::class, 'index'])->name('timeslots.index');
+    Route::get('time-slot/{id}/show', [TimeslotController::class, 'show'])->name('timeslots.show');
+    Route::get('time-slot/create', [TimeslotController::class, 'create'])->name('timeslots.create');
+    Route::post('time-slot/save', [TimeslotController::class, 'store'])->name('timeslots.store');
+    Route::get('time-slot/{id}/edit', [TimeslotController::class, 'edit'])->name('timeslots.edit');
+    Route::post('time-slot/update', [TimeslotController::class, 'update'])->name('timeslots.update');
+    Route::post('time-slot/inactive', [TimeslotController::class, 'inactive'])->name('timeslots.inactive');
+    Route::post('time-slot/active', [TimeslotController::class, 'active'])->name('timeslots.active');
+    Route::post('time-slot/destroy', [TimeslotController::class, 'destroy'])->name('timeslots.destroy');
+
     // attribute
     Route::get('brands/manage', [BrandController::class, 'index'])->name('brands.index');
     Route::get('brands/{id}/show', [BrandController::class, 'show'])->name('brands.show');
@@ -443,7 +482,7 @@ Route::group(['namespace' => 'Admin', 'middleware' => ['auth', 'lock', 'check_re
     Route::get('products/update-feature', [ProductController::class, 'update_feature'])->name('products.update_feature');
     Route::get('products/update-status', [ProductController::class, 'update_status'])->name('products.update_status');
     Route::post('products/barcode-update', [ProductController::class, 'barcode_update'])->name('products.barcode_update');
-    Route::get('products/barcode', [ProductController::class,'barcode'])->name('products.barcode');
+    Route::get('products/barcode', [ProductController::class, 'barcode'])->name('products.barcode');
     Route::get('products/purchase-create', [ProductController::class, 'purchase_create'])->name('products.purchase_create');
     Route::post('products/purchase-store', [ProductController::class, 'purchase_store'])->name('products.purchase_store');
     Route::get('products/purchase-list', [ProductController::class, 'purchase_list'])->name('products.purchase');
@@ -579,12 +618,12 @@ Route::group(['namespace' => 'Admin', 'middleware' => ['auth', 'lock', 'check_re
     Route::post('shipping-charge/inactive', [ShippingChargeController::class, 'inactive'])->name('shippingcharges.inactive');
     Route::post('shipping-charge/active', [ShippingChargeController::class, 'active'])->name('shippingcharges.active');
     Route::post('shipping-charge/destroy', [ShippingChargeController::class, 'destroy'])->name('shippingcharges.destroy');
-    
+
     // district routes
-    Route::get('district/manage', [DistrictController::class,'index'])->name('districts.index');
-    Route::get('district/{id}/edit', [DistrictController::class,'edit'])->name('districts.edit');
-    Route::post('district/update', [DistrictController::class,'update'])->name('districts.update');
-    Route::post('district/charge-update', [DistrictController::class,'district_charge'])->name('districts.charge');
+    Route::get('district/manage', [DistrictController::class, 'index'])->name('districts.index');
+    Route::get('district/{id}/edit', [DistrictController::class, 'edit'])->name('districts.edit');
+    Route::post('district/update', [DistrictController::class, 'update'])->name('districts.update');
+    Route::post('district/charge-update', [DistrictController::class, 'district_charge'])->name('districts.charge');
 
     // backend customer route
     Route::get('customer', [CustomerManageController::class, 'index'])->name('customers.index');

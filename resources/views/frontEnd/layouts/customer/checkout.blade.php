@@ -21,7 +21,7 @@
                         <div class="card">
                             <div class="card-header">
                                 <h6 class = "check-position">Fill in the details and click on the "Confirm Order" button
-                                    </h6>
+                                </h6>
                             </div>
                             <div class="card-body">
                                 <div class="row">
@@ -122,6 +122,7 @@
                                             @endif
                                         </div>
                                     </div>
+                                    
                                     <div class="col-sm-12">
                                         <div class="form-group">
                                             <button class="order_place" type="submit">Confirm Order</button>

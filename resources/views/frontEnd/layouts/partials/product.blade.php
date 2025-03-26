@@ -9,6 +9,8 @@
             <img src="{{ asset($value->image ? $value->image->image : '') }}"
                 alt="{{ $value->name }}" />
         </a>
+         <button data-id="{{ $value->id }}" class="hover-zoom wishlist_store"
+                title="Wishlist"><i class="fa-regular fa-heart"></i></button>
     </div>
     <div class="pro_des">
         <div class="pro_name">

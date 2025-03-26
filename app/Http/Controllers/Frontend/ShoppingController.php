@@ -13,6 +13,62 @@ use App\Models\Product;
 
 class ShoppingController extends Controller
 {
+    //wishlist store
+     public function wishlist_store(Request $request)
+    {
+       $product = Product::select('id', 'name', 'slug', 'new_price', 'old_price', 'purchase_price', 'type', 'stock','category_id')->where(['id' => $request->id])->first();
+
+        if ($product->type == 0) {
+            $var_product = ProductVariable::where(['product_id' => $request->id])->first();
+            $purchase_price = $var_product ? $var_product->purchase_price : 0;
+            $old_price = $var_product ? $var_product->old_price : 0;
+            $new_price = $var_product ? $var_product->new_price : 0;
+            $stock = $var_product ? $var_product->stock : 0;
+        } else {
+            $purchase_price = $product->purchase_price;
+            $old_price = $product->old_price;
+            $new_price = $product->new_price;
+            $stock = $product->stock;
+        }
+
+        Cart::instance('wishlist')->add([
+            'id' => $product->id,
+            'name' => $product->name,
+            'qty' => $request->qty??1,
+            'price' => $new_price,
+            'weight' => 1,
+            'price' => $new_price,
+            'options' => [
+                'slug' => $product->slug,
+                'image' => $product->image->image,
+                'old_price' => $old_price,
+                'purchase_price' => $purchase_price,
+            ],
+        ]);
+
+
+        $data = Cart::instance('wishlist')->content();
+        return response()->json($data);
+    }
+    public function wishlist_show()
+    {
+        $data = Cart::instance('wishlist')->content();
+        return view('frontEnd.layouts.pages.wishlist', compact('data'));
+    }
+    public function wishlist_remove(Request $request)
+    {
+        $remove = Cart::instance('wishlist')->update($request->id, 0);
+        $data = Cart::instance('wishlist')->content();
+        return view('frontEnd.layouts.ajax.wishlist_count', compact('data'));
+    }
+    public function wishlist_count(Request $request){
+        return view('frontEnd.layouts.ajax.wishlist_count');
+    }
+    public function wishlist_summary(Request $request){
+        return view('frontEnd.layouts.ajax.wishlist_summary');
+    }
+
+
 
     public function addTocartGet($id, Request $request)
     {
@@ -165,10 +221,18 @@ class ShoppingController extends Controller
         $data = Cart::instance('shopping')->count();
         return view('frontEnd.layouts.ajax.cart_count', compact('data'));
     }
+
     public function mobilecart_qty(Request $request)
     {
         $data = Cart::instance('shopping')->count();
         return view('frontEnd.layouts.ajax.mobilecart_qty', compact('data'));
+    }
+
+    public function mobile__wishlist(Request $request)
+    {
+        $data = Cart::instance('wishlist')->count();
+        // return $data;
+        return view('frontEnd.layouts.ajax.wishlist_mobile', compact('data'));
     }
 
     

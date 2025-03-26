@@ -9,60 +9,66 @@ use Illuminate\Support\Facades\Auth;
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Support\Facades\Session;
 use Gloudemans\Shoppingcart\Facades\Cart;
-use App\Models\Category;
-use App\Models\Subcategory;
-use App\Models\Childcategory;
-use App\Models\Product;
-use App\Models\District;
-use App\Models\CreatePage;
-use App\Models\Campaign;
-use App\Models\Banner;
-use App\Models\CouponCode;
-use App\Models\ShippingCharge;
-use App\Models\Customer;
-use App\Models\OrderDetails;
 use App\Models\ProductVariable;
+use App\Models\ShippingCharge;
+use App\Models\Childcategory;
+use App\Models\OrderDetails;
+use App\Models\Subcategory;
+use App\Models\CouponCode;
+use App\Models\CreatePage;
+use App\Models\Timeslot;
+use App\Models\Customer;
+use App\Models\Category;
+use App\Models\District;
+use App\Models\Campaign;
 use App\Models\Payment;
-use App\Models\Order;
+use App\Models\Product;
 use App\Models\Review;
+use App\Models\Banner;
+use App\Models\Order;
+use App\Models\CustomerAddress;
+use App\Models\PaymentGateway;
 use App\Models\Brand;
+use Carbon\Carbon;
 use Cache;
 use DB;
 use Log;
+
 class FrontendController extends Controller
 {
-    public function index(){
-
+    public function index()
+    {
         $sliders = Banner::where(['status' => 1, 'category_id' => 1])
             ->select('id', 'image', 'link')
             ->limit(1)
             ->get();
 
         $sliderrightads = Banner::where(['status' => 1, 'category_id' => 2])
-        ->select('id', 'image', 'link')
-        ->limit(2)
-        ->get();
+            ->select('id', 'image', 'link')
+            ->limit(2)
+            ->get();
 
         $hotdeal_top = Product::where(['status' => 1, 'topsale' => 1])
-        ->orderBy('id', 'DESC')
-        ->select('id', 'name', 'slug', 'new_price', 'old_price', 'type','category_id')
-        ->withCount('variable')
-        ->limit(12)
-        ->get();
+            ->orderBy('id', 'DESC')
+            ->select('id', 'name', 'slug', 'new_price', 'old_price', 'type', 'category_id')
+            ->withCount('variable')
+            ->limit(12)
+            ->get();
 
         $homecategory = Category::where(['front_view' => 1, 'status' => 1])
-        ->select('id','name','slug','front_view','status')
-        ->orderBy('id', 'ASC')
-        ->get();
+            ->select('id', 'name', 'slug', 'front_view', 'status')
+            ->orderBy('id', 'ASC')
+            ->get();
 
         $brands = Brand::where(['status' => 1])
-        ->orderBy('id', 'ASC')
-        ->get();
+            ->orderBy('id', 'ASC')
+            ->get();
 
-        return view('frontEnd.layouts.pages.index', compact('sliders', 'hotdeal_top', 'homecategory','sliderrightads','brands'));
+        return view('frontEnd.layouts.pages.index', compact('sliders', 'hotdeal_top', 'homecategory', 'sliderrightads', 'brands'));
     }
 
-    public function category($slug, Request $request){
+    public function category($slug, Request $request)
+    {
 
         $category = Category::where(['slug' => $slug, 'status' => 1])->first();
         $products = Product::where(['status' => 1, 'category_id' => $category->id])
@@ -109,7 +115,7 @@ class FrontendController extends Controller
         }
 
         $products = $products->paginate(30)->withQueryString();
-        
+
         return view('frontEnd.layouts.pages.subcategory', compact('subcategory', 'products'));
     }
 
@@ -140,7 +146,8 @@ class FrontendController extends Controller
         return view('frontEnd.layouts.pages.childcategory', compact('childcategory', 'products'));
     }
 
-    public function brand($slug, Request $request){
+    public function brand($slug, Request $request)
+    {
         $brand = Brand::where(['slug' => $slug, 'status' => 1])->first();
         $products = Product::where(['status' => 1, 'brand_id' => $brand->id])
             ->select('id', 'name', 'slug', 'new_price', 'old_price', 'type', 'brand_id')->withCount('variable');
@@ -163,27 +170,28 @@ class FrontendController extends Controller
         return view('frontEnd.layouts.pages.brand', compact('brand', 'products'));
     }
 
-    public function bestdeals(Request $request){
+    public function bestdeals(Request $request)
+    {
 
         $products = Product::where(['status' => 1, 'topsale' => 1])
-        ->orderBy('id', 'DESC')
-        ->select('id', 'name', 'slug', 'new_price', 'old_price', 'type')
-        ->withCount('variable');
+            ->orderBy('id', 'DESC')
+            ->select('id', 'name', 'slug', 'new_price', 'old_price', 'type')
+            ->withCount('variable');
 
         if ($request->sort == 1) {
-        $products = $products->orderBy('created_at', 'desc');
-            } elseif ($request->sort == 2) {
-                $products = $products->orderBy('created_at', 'asc');
-            } elseif ($request->sort == 3) {
-                $products = $products->orderBy('new_price', 'desc');
-            } elseif ($request->sort == 4) {
-                $products = $products->orderBy('new_price', 'asc');
-            } elseif ($request->sort == 5) {
-                $products = $products->orderBy('name', 'asc');
-            } elseif ($request->sort == 6) {
-                $products = $products->orderBy('name', 'desc');
-            } else {
-                $products = $products->latest();
+            $products = $products->orderBy('created_at', 'desc');
+        } elseif ($request->sort == 2) {
+            $products = $products->orderBy('created_at', 'asc');
+        } elseif ($request->sort == 3) {
+            $products = $products->orderBy('new_price', 'desc');
+        } elseif ($request->sort == 4) {
+            $products = $products->orderBy('new_price', 'asc');
+        } elseif ($request->sort == 5) {
+            $products = $products->orderBy('name', 'asc');
+        } elseif ($request->sort == 6) {
+            $products = $products->orderBy('name', 'desc');
+        } else {
+            $products = $products->latest();
         }
         $products = $products->paginate(30)->withQueryString();
 
@@ -191,7 +199,8 @@ class FrontendController extends Controller
     }
 
 
-    public function details($slug){
+    public function details($slug)
+    {
 
         $details = Product::where(['slug' => $slug, 'status' => 1])
             ->with('image', 'images', 'category', 'subcategory', 'childcategory')
@@ -241,7 +250,22 @@ class FrontendController extends Controller
             echo $data;
         }
     }
-   
+    public function viewCart()
+    {
+       return view('frontEnd.layouts.pages.cart');
+    }
+    public function viewCart_ajax()
+    {
+       return view('frontEnd.layouts.ajax.viewcart');
+    }
+    public function cart__list()
+    {
+       $bkash_gateway = PaymentGateway::where(['status' => 1, 'type' => 'bkash'])->first();
+       $shurjopay_gateway = PaymentGateway::where(['status' => 1, 'type' => 'shurjopay'])->first();
+       $shippingcharge = ShippingCharge::where(['status' => 1, 'website' => 1])->get();
+       return view('frontEnd.layouts.ajax.cart_list',compact('shippingcharge','bkash_gateway','shurjopay_gateway'));
+    }
+
     public function livesearch(Request $request)
     {
         // return $request->all();
@@ -263,7 +287,7 @@ class FrontendController extends Controller
         }
         return view('frontEnd.layouts.ajax.search', compact('products'));
     }
-    
+
     public function search(Request $request)
     {
         $products = Product::select('id', 'name', 'slug', 'new_price', 'old_price', 'type')
@@ -280,17 +304,17 @@ class FrontendController extends Controller
         $keyword = $request->keyword;
         return view('frontEnd.layouts.pages.search', compact('products', 'keyword'));
     }
-    
-    
+
+
     public function shipping_charge(Request $request)
     {
         if ($request->id == NULL) {
             Session::put('shipping', 0);
         } else {
-           $shipping = ShippingCharge::where(['id' => $request->id])->first();
+            $shipping = ShippingCharge::where(['id' => $request->id])->first();
             Session::put('shipping', $shipping->amount);
         }
-        if($request->campaign == 1){
+        if ($request->campaign == 1) {
             $data = Cart::instance('shopping')->content();
             return view('frontEnd.layouts.ajax.cart_camp', compact('data'));
         }
@@ -313,7 +337,8 @@ class FrontendController extends Controller
         $areas = District::where(['district' => $request->id])->pluck('area_name', 'id');
         return response()->json($areas);
     }
-    public function campaign($slug, Request $request){
+    public function campaign($slug, Request $request)
+    {
 
         $campaign = Campaign::where('slug', $slug)->with('images')->first();
         $product = Product::select('id', 'name', 'slug', 'new_price', 'old_price', 'purchase_price', 'type', 'stock')->where(['id' => $campaign->product_id])->first();
@@ -366,9 +391,9 @@ class FrontendController extends Controller
         $shippingcharge = ShippingCharge::where('status', 1)->get();
         $select_charge = ShippingCharge::where('status', 1)->first();
         Session::put('shipping', $select_charge->amount);
-        return view('frontEnd.layouts.pages.campaign.campaign'.$campaign->template, compact('campaign', 'productsizes', 'productcolors', 'shippingcharge', 'old_price', 'new_price'));
-  
-       
+        return view('frontEnd.layouts.pages.campaign.campaign' . $campaign->template, compact('campaign', 'productsizes', 'productcolors', 'shippingcharge', 'old_price', 'new_price'));
+
+
     }
     public function campaign_stock(Request $request)
     {
@@ -476,17 +501,69 @@ class FrontendController extends Controller
         }
     }
 
+    public function address_modal()
+    {
+        $updatedHtml = view('frontEnd.layouts.ajax.addressmodal')->render();
+        return response()->json([
+            'success' => true,
+            'updatedHtml' => $updatedHtml,
+        ]);
+    }
 
-        
+  public function address_modal_edit(Request $request)
+    {
+        $edit_data = CustomerAddress::find($request->id);
+        if (!$edit_data) {
+            return response()->json(['success' => false, 'message' => 'Address not found'], 404);
+        }
 
-        // DB::listen(function ($query) {
-        //     Log::channel('test_log')->info('===== started db query ========================================');
-        //     Log::channel('test_log')->info(json_encode([
-        //         'sql' => $query->sql,
-        //         'time' => $query->time . ' ms',
-        //         'bindings' => $query->bindings,
-        //         'connection' => $query->connection,
-        //         'connectionName' => $query->connectionName,
-        //     ]));
-        // });
+        $editdHtml = view('frontEnd.layouts.ajax.editaddress', ['edit_data'=> $edit_data])->render();
+        return response()->json([
+            'success' => true,
+            'updatedHtml' => $editdHtml,
+        ]);
+    }
+   public function address_remove(Request $request)
+    {
+        $address = CustomerAddress::find($request->id);
+        if (!$address) {
+            return response()->json(['success' => false, 'message' => 'Address not found'], 404);
+        }
+        $address->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Address removed successfully',
+        ]);
+    }
+
+
+
+    public function fetchAvailableTimes(Request $request)
+    {
+        $selectedDate = Carbon::parse($request->date);
+        $currentTime = Carbon::now()->format('H:i');
+
+        $timeSlots = Timeslot::where('status', 1)->get();
+
+        if ($selectedDate->isToday()) {
+            $timeSlots = $timeSlots->filter(function ($slot) use ($currentTime) {
+                return $slot->start_time > $currentTime;
+            })->values();
+        }
+
+        return response()->json($timeSlots);
+    }
+
+
+    // DB::listen(function ($query) {
+    //     Log::channel('test_log')->info('===== started db query ========================================');
+    //     Log::channel('test_log')->info(json_encode([
+    //         'sql' => $query->sql,
+    //         'time' => $query->time . ' ms',
+    //         'bindings' => $query->bindings,
+    //         'connection' => $query->connection,
+    //         'connectionName' => $query->connectionName,
+    //     ]));
+    // });
 }
