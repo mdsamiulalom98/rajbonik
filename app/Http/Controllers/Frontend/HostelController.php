@@ -7,32 +7,25 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 use Brian2694\Toastr\Facades\Toastr;
-use Intervention\Image\Facades\Image;
 use Illuminate\Support\Facades\Session;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Gloudemans\Shoppingcart\Facades\Cart;
 use App\Models\Customer;
 use App\Models\District;
 use App\Models\Order;
-use App\Models\ShippingCharge;
 use App\Models\OrderDetails;
 use App\Models\Payment;
 use App\Models\Shipping;
-use App\Models\Review;
-use App\Models\PaymentGateway;
-use App\Models\SmsGateway;
 use App\Models\GeneralSetting;
-use App\Models\CouponCode;
 use App\Models\Hostel;
 use App\Models\Product;
 use App\Models\ProductVariable;
-use Mail;
+
 class HostelController extends Controller
 {
     public function orders_updates_page(Request $request)
     {
-       // return $request->all();
+        // return $request->all();
         if (Cart::instance('shopping')->count() <= 0) {
             Toastr::error('Your shopping empty', 'Failed!');
             return redirect()->back();
@@ -43,67 +36,116 @@ class HostelController extends Controller
         $subtotal = str_replace(',', '', $subtotal);
         $subtotal = str_replace('.00', '', $subtotal);
         $customer_id = Auth::guard('customer')->user()->id;
-        // order data save
-        $order = Order::where('id', $order__id)->first();
-        // return  $order;
-        $order->amount = $subtotal;
-        $order->discount = 0;
-        $order->shipping_charge = 0;
-        $order->customer_id = $customer_id;
-        $order->order_status = 1;
-        $order->note = 'hostel note';
-        $order->save();
+        if ($request->reorder) {
+            $order = new Order();
+            $order->invoice_id = rand(11111, 99999);
+            $order->amount = $subtotal;
+            $order->discount = 0;
+            $order->shipping_charge = 0;
+            $order->customer_id = $customer_id;
+            $order->customer_type = 'hostel';
+            $order->customer_ip = $request->ip();
+            $order->order_type = Session::get('free_shipping') ? 'digital' : 'goods';
+            $order->order_status = 1;
+            $order->delivery_time = $request->deliveryTime;
+            $order->note = 'Hostel order';
+            $order->save();
 
+            // shipping data save
+            $shipping = new Shipping();
+            $shipping->order_id = $order->id;
+            $shipping->customer_id = $customer_id;
+            $shipping->name = Auth::guard('customer')->user()->name ?? '';
+            $shipping->phone = Auth::guard('customer')->user()->phone ?? '';
+            $shipping->address = Auth::guard('customer')->user()->address ?? '';
+            $shipping->area = 'Free Shipping';
+            $shipping->save();
 
-        // payment data save
-        $payment = Payment::where('order_id', $order__id)->first();
-        $payment->order_id = $order->id;
-        $payment->customer_id = $customer_id;
-        $payment->payment_method = 'Cash On Delivery';
-        $payment->amount = $order->amount;
-        $payment->payment_status = 'pending';
-        // return $payment;
-        $payment->save();
+            // payment data save
+            $payment = new Payment();
+            $payment->order_id = $order->id;
+            $payment->customer_id = $customer_id;
+            $payment->payment_method = 'Hostel Order';
+            $payment->amount = $order->amount;
+            $payment->payment_status = 'pending';
+            $payment->save();
 
-        // order details data save
-        foreach ($order->orderdetails as $orderdetail) {
-            $item = Cart::instance('shopping')->content()->where('id', $orderdetail->product_id)->first();
-            if (!$item) {
-                $orderdetail->delete();
-            }
-        }
-        // return Cart::instance('shopping')->content();
-        foreach (Cart::instance('shopping')->content() as $cart) {
-            // return $cart->options->details_id;
-            $exits = OrderDetails::where('id', $cart->options->details_id)->first();
-            if ($exits) {
-                $order_details = OrderDetails::find($exits->id);
-                $order_details->product_discount = $cart->options->product_discount;
-                $order_details->sale_price = $cart->price;
-                $order_details->qty = $cart->qty;
-                $order_details->save();
-            } else {
+            // order details data save
+            foreach (Cart::instance('shopping')->content() as $cart) {
+                // return $cart;
                 $order_details = new OrderDetails();
                 $order_details->order_id = $order->id;
                 $order_details->product_id = $cart->id;
                 $order_details->product_name = $cart->name;
-                $order_details->purchase_price = $cart->options->purchase_price;
-                $order_details->product_discount = $cart->options->product_discount;
                 $order_details->sale_price = $cart->price;
-                $order_details->qty = $cart->qty;
+                $order_details->purchase_price = $cart->options->purchase_price;
+                $order_details->product_color = $cart->options->product_color;
+                $order_details->product_size = $cart->options->product_size;
+                $order_details->product_size = $cart->options->product_size;
                 $order_details->product_type = $cart->options->type;
+                $order_details->comment = $cart->options->comment;
+                $order_details->qty = $cart->qty;
                 $order_details->save();
             }
+        } else {
+            // order data save
+            $order = Order::where('id', $order__id)->first();
+            $order->amount = $subtotal;
+            $order->discount = 0;
+            $order->shipping_charge = 0;
+            $order->customer_id = $customer_id;
+            $order->order_status = 1;
+            $order->note = 'hostel note';
+            $order->save();
+
+            // payment data save
+            $payment = Payment::where('order_id', $order__id)->first();
+            $payment->order_id = $order->id;
+            $payment->customer_id = $customer_id;
+            $payment->payment_method = 'Cash On Delivery';
+            $payment->amount = $order->amount;
+            $payment->payment_status = 'pending';
+            $payment->save();
+
+            // order details data save
+            foreach ($order->orderdetails as $orderdetail) {
+                $item = Cart::instance('shopping')->content()->where('id', $orderdetail->product_id)->first();
+                if (!$item) {
+                    $orderdetail->delete();
+                }
+            }
+
+            foreach (Cart::instance('shopping')->content() as $cart) {
+                $exits = OrderDetails::where('id', $cart->options->details_id)->first();
+                if ($exits) {
+                    $order_details = OrderDetails::find($exits->id);
+                    $order_details->product_discount = $cart->options->product_discount;
+                    $order_details->sale_price = $cart->price;
+                    $order_details->qty = $cart->qty;
+                    $order_details->save();
+                } else {
+                    $order_details = new OrderDetails();
+                    $order_details->order_id = $order->id;
+                    $order_details->product_id = $cart->id;
+                    $order_details->product_name = $cart->name;
+                    $order_details->purchase_price = $cart->options->purchase_price;
+                    $order_details->product_discount = $cart->options->product_discount;
+                    $order_details->sale_price = $cart->price;
+                    $order_details->qty = $cart->qty;
+                    $order_details->product_type = $cart->options->type;
+                    $order_details->save();
+                }
+            }
+            Toastr::success('Thanks, Your order update successfully', 'Success!');
         }
-        // return "stop";
 
         Cart::instance('shopping')->destroy();
         Session::forget('order_id');
-        Toastr::success('Thanks, Your order update successfully', 'Success!');
         return redirect()->back();
     }
 
-    public function orders_updates(){
+    public function orders_updates()
+    {
         $cartinfo = Cart::instance('shopping')->content();
 
         if (!$cartinfo) {
@@ -113,36 +155,39 @@ class HostelController extends Controller
         return view('frontEnd.layouts.hostel.ordersEdit', compact('cartinfo'));
     }
 
-    public function order_clear(){
-           $cartinfo = Cart::instance('shopping')->destroy();
-           return response()->json(compact('cartinfo'));
-        }
-    public function orders_edit_hostel(Request $request){
+    public function order_clear()
+    {
+        $cartinfo = Cart::instance('shopping')->destroy();
+        return response()->json(compact('cartinfo'));
+    }
+    public function orders_edit_hostel(Request $request)
+    {
         Session::put('order_id', $request->id);
 
         $data = Cart::instance('shopping')->destroy();
-        $data = OrderDetails::where('order_id',$request->id)->with('image')->get();
-        foreach($data as $key=>$value){
-            $hostel_cart = Cart::instance('shopping')->add([
-            'id' => $value->product_id,
-            'name' => $value->product_name,
-            'qty' => $value->qty,
-            'price' => $value->sale_price,
-            'weight' => 1,
-            'options' => [
-                'slug' => $value->product_name,
-                'image' => $value->image->image,
-                'old_price' => $value->sale_price,
-                'purchase_price' => $value->purchase_price,
-                'product_size' => $value->product_size,
-                'product_color' => $value->product_color,
-                'type' => $value->product_type,
-                'comment' => $value->comment,
-                'details_id' => $value->id
+        $data = OrderDetails::where('order_id', $request->id)->with('image')->get();
+        foreach ($data as $value) {
+            Cart::instance('shopping')->add([
+                'id' => $value->product_id,
+                'name' => $value->product_name,
+                'qty' => $value->qty,
+                'price' => $value->sale_price,
+                'weight' => 1,
+                'options' => [
+                    'slug' => $value->product_name,
+                    'image' => $value->image->image,
+                    'old_price' => $value->sale_price,
+                    'purchase_price' => $value->purchase_price,
+                    'product_size' => $value->product_size,
+                    'product_color' => $value->product_color,
+                    'type' => $value->product_type,
+                    'comment' => $value->comment,
+                    'details_id' => $value->id
                 ],
             ]);
         }
-        $products['products'] = Product::select('id', 'name', 'slug', 'new_price', 'old_price', 'type', 'stock')
+        $products['order'] = Order::where('id', $request->id)->first();
+        $products['products'] = Product::select('id', 'name', 'slug', 'new_price', 'old_price', 'type', 'stock')->where(['status' => 1, 'hostel_product' => 1])
             ->with('image', 'variables')->get();
         $products = view('frontEnd.layouts.hostel.edit', $products)->render();
         if ($products != '') {
@@ -155,7 +200,7 @@ class HostelController extends Controller
     public function order_save(Request $request)
     {
         // return $request->all();
-         $this->validate($request, [
+        $this->validate($request, [
             'deliveryTime' => 'required',
         ]);
 
@@ -172,53 +217,54 @@ class HostelController extends Controller
         $customer_id = Auth::guard('customer')->user()->id;
 
         // order data save
-        $order                   = new Order();
-        $order->invoice_id       = rand(11111, 99999);
-        $order->amount           = $amount;
-        $order->discount         = 0;
-        $order->shipping_charge  = 0;
-        $order->customer_id      = $customer_id;
-        $order->customer_type    = 'hostel';
-        $order->customer_ip      = $request->ip();
-        $order->order_type       = Session::get('free_shipping') ? 'digital' : 'goods';
-        $order->order_status     = 1;
-        $order->note             = 'Hostel order';
+        $order = new Order();
+        $order->invoice_id = rand(11111, 99999);
+        $order->amount = $amount;
+        $order->discount = 0;
+        $order->shipping_charge = 0;
+        $order->customer_id = $customer_id;
+        $order->customer_type = 'hostel';
+        $order->customer_ip = $request->ip();
+        $order->order_type = Session::get('free_shipping') ? 'digital' : 'goods';
+        $order->order_status = 1;
+        $order->delivery_time = $request->deliveryTime;
+        $order->note = 'Hostel order';
         $order->save();
 
         // shipping data save
-        $shipping              =   new Shipping();
-        $shipping->order_id    =   $order->id;
-        $shipping->customer_id =   $customer_id;
-        $shipping->name        =   Auth::guard('customer')->user()->name;
-        $shipping->phone       =   Auth::guard('customer')->user()->phone;
-        $shipping->address     =   Auth::guard('customer')->user()->address??'';
-        $shipping->area        =   'Free Shipping';
+        $shipping = new Shipping();
+        $shipping->order_id = $order->id;
+        $shipping->customer_id = $customer_id;
+        $shipping->name = Auth::guard('customer')->user()->name;
+        $shipping->phone = Auth::guard('customer')->user()->phone;
+        $shipping->address = Auth::guard('customer')->user()->address ?? '';
+        $shipping->area = 'Free Shipping';
         $shipping->save();
 
         // payment data save
-        $payment                 = new Payment();
-        $payment->order_id       = $order->id;
-        $payment->customer_id    = $customer_id;
+        $payment = new Payment();
+        $payment->order_id = $order->id;
+        $payment->customer_id = $customer_id;
         $payment->payment_method = 'Hostel Order';
-        $payment->amount         = $order->amount;
+        $payment->amount = $order->amount;
         $payment->payment_status = 'pending';
         $payment->save();
 
         // order details data save
         foreach (Cart::instance('shopping')->content() as $cart) {
             // return $cart;
-            $order_details                  =   new OrderDetails();
-            $order_details->order_id        =   $order->id;
-            $order_details->product_id      =   $cart->id;
-            $order_details->product_name    =   $cart->name;
-            $order_details->sale_price      =   $cart->price;
-            $order_details->purchase_price  =   $cart->options->purchase_price;
-            $order_details->product_color   =   $cart->options->product_color;
-            $order_details->product_size    =   $cart->options->product_size;
-            $order_details->product_size    =   $cart->options->product_size;
-            $order_details->product_type    =   $cart->options->type;
-            $order_details->comment         =   $cart->options->comment;
-            $order_details->qty             =   $cart->qty;
+            $order_details = new OrderDetails();
+            $order_details->order_id = $order->id;
+            $order_details->product_id = $cart->id;
+            $order_details->product_name = $cart->name;
+            $order_details->sale_price = $cart->price;
+            $order_details->purchase_price = $cart->options->purchase_price;
+            $order_details->product_color = $cart->options->product_color;
+            $order_details->product_size = $cart->options->product_size;
+            $order_details->product_size = $cart->options->product_size;
+            $order_details->product_type = $cart->options->type;
+            $order_details->comment = $cart->options->comment;
+            $order_details->qty = $cart->qty;
             $order_details->save();
         }
 
@@ -227,15 +273,15 @@ class HostelController extends Controller
 
         Toastr::success('Thanks, Your order place successfully', 'Success!');
         return redirect()->back();
-        
+
     }
 
-     public function cart_content()
+    public function cart_content()
     {
         $cartinfo = Cart::instance('shopping')->content();
         return view('frontEnd.layouts.hostel.cart_list', compact('cartinfo'));
     }
-     public function cart_edit(Request $request)
+    public function cart_edit(Request $request)
     {
         $cartContent = Cart::instance('shopping')->content();
         $cartinfo = $cartContent->firstWhere('id', $request->id);
@@ -246,7 +292,7 @@ class HostelController extends Controller
         $products = Product::select('id', 'name', 'slug', 'new_price', 'old_price', 'type', 'stock')
             ->with('image', 'variables')
             ->get();
-        $response = view('frontEnd.layouts.hostel.cart_edit',compact('cartinfo','products'))->render();
+        $response = view('frontEnd.layouts.hostel.cart_edit', compact('cartinfo', 'products'))->render();
         return response()->json($response);
     }
 
@@ -266,9 +312,9 @@ class HostelController extends Controller
     }
 
 
-     public function cart_add(Request $request)
+    public function cart_add(Request $request)
     {
-        $product = Product::select('id', 'name', 'slug', 'new_price', 'old_price', 'purchase_price', 'type', 'stock','wholesale')->where(['id' => $request->id])->first();
+        $product = Product::select('id', 'name', 'slug', 'new_price', 'old_price', 'purchase_price', 'type', 'stock', 'wholesale', 'is_vegetable')->where(['id' => $request->id])->first();
 
         $var_product = ProductVariable::where(['product_id' => $request->id, 'color' => $request->color, 'size' => $request->size])->first();
         if ($product->type == 0) {
@@ -313,6 +359,7 @@ class HostelController extends Controller
                 'product_color' => $request->color,
                 'type' => $product->type,
                 'comment' => $request->comment,
+                'is_vegetable' => $product->is_vegetable
             ],
         ]);
 
@@ -338,7 +385,7 @@ class HostelController extends Controller
         }
 
         $qty = $request->qty;
-          $cartItem = Cart::instance('shopping')->content()->first(function ($item) use ($request, $product) {
+        $cartItem = Cart::instance('shopping')->content()->first(function ($item) use ($request, $product) {
             return $item->id == $request->cart_id || $item->id == $product->id;
         });
 
@@ -352,7 +399,8 @@ class HostelController extends Controller
             Toastr::error('Product stock limit over', 'Failed!');
             return response()->json(['status' => 'limitover', 'message' => 'Your stock limit is over']);
         }
-        $hostel_cart_update = Cart::instance('shopping')->update($request->cart_id,[
+
+        $hostel_cart_update = Cart::instance('shopping')->update($request->cart_id, [
             'id' => $product->id,
             'name' => $product->name,
             'qty' => $qty,
@@ -373,19 +421,18 @@ class HostelController extends Controller
         // return Cart::instance('shopping')->content();
         return response()->json(compact('hostel_cart_update'));
     }
-     public function cart_creatForm(Request $request)
+    public function cart_creatForm(Request $request)
     {
-        
         $products = Product::select('id', 'name', 'slug', 'new_price', 'old_price', 'type', 'stock')
+            ->where(['status' => 1, 'hostel_product' => 1])
             ->with('image', 'variables')
             ->get();
-        return view('frontEnd.layouts.hostel.createForm',compact('products'));
+        return view('frontEnd.layouts.hostel.createForm', compact('products'));
     }
 
-   public function cart_remove(Request $request)
+    public function cart_remove(Request $request)
     {
         $cartContent = Cart::instance('shopping')->content();
-        // return $cartContent;
         $cartItem = $cartContent->firstWhere('rowId', $request->id);
         if (!$cartItem) {
             return response()->json(['error' => 'Item not found in the cart'], 404);
@@ -394,22 +441,22 @@ class HostelController extends Controller
         Cart::instance('shopping')->remove($cartItem->rowId);
         return response()->json(['success' => 'Item removed successfully']);
     }
-   public function destroy(Request $request)
+    public function destroy(Request $request)
     {
-        $order = Order::where('id', $request->id)->delete();
-        $order_details = OrderDetails::where('order_id', $request->id)->delete();
-        $shipping = Shipping::where('order_id', $request->id)->delete();
-        $payment = Payment::where('order_id', $request->id)->delete();
+        Order::where('id', $request->id)->delete();
+        OrderDetails::where('order_id', $request->id)->delete();
+        Shipping::where('order_id', $request->id)->delete();
+        Payment::where('order_id', $request->id)->delete();
         Toastr::success('Success', 'Order delete success successfully');
         return redirect()->back();
     }
 
-     public function hostelProduct(Request $request)
+    public function hostelProduct(Request $request)
     {
         $products = Product::where(['status' => 1, 'wholesale' => 1])
-        ->orderBy('id', 'DESC')
-        ->select('id', 'name', 'slug', 'new_price', 'old_price', 'type')
-        ->withCount('variable');
+            ->orderBy('id', 'DESC')
+            ->select('id', 'name', 'slug', 'new_price', 'old_price', 'type')
+            ->withCount('variable');
 
         $products = $products->paginate(30)->withQueryString();
 
@@ -418,23 +465,23 @@ class HostelController extends Controller
 
     public function hostelOrder(Request $request)
     {
-        $show_data = Order::where('customer_id',Auth::guard('customer')->user()->id)->latest()->with('shipping', 'status');
-            if ($request->keyword) {
-                $show_data = $show_data->where(function ($query) use ($request) {
-                    $query->orWhere('invoice_id', 'LIKE', '%' . $request->keyword . '%')
-                        ->orWhereHas('shipping', function ($subQuery) use ($request) {
-                            $subQuery->where('phone', $request->keyword);
-                        });
-                });
-            }
+        $show_data = Order::where('customer_id', Auth::guard('customer')->user()->id)->latest()->with('shipping', 'status');
+        if ($request->keyword) {
+            $show_data = $show_data->where(function ($query) use ($request) {
+                $query->orWhere('invoice_id', 'LIKE', '%' . $request->keyword . '%')
+                    ->orWhereHas('shipping', function ($subQuery) use ($request) {
+                        $subQuery->where('phone', $request->keyword);
+                    });
+            });
+        }
         $show_data = $show_data->paginate(50);
 
-        return view('frontEnd.layouts.hostel.orders',compact('show_data'));
+        return view('frontEnd.layouts.hostel.orders', compact('show_data'));
     }
-    
-     public function invoiceData(Request $request)
+
+    public function invoiceData(Request $request)
     {
-        $data['data']= Order::where(['id' => $request->id])->with('orderdetails', 'payment', 'shipping', 'customer')->get();
+        $data['data'] = Order::where(['id' => $request->id])->with('orderdetails', 'payment', 'shipping', 'customer')->get();
         // return  $data;
         $data = view('frontEnd.layouts.hostel.invoice', $data)->render();
         if ($data != '') {
@@ -442,20 +489,21 @@ class HostelController extends Controller
         }
     }
 
- public function orderCreate(Request $request){
-      $products['products'] = Product::select('id', 'name', 'slug', 'new_price', 'old_price', 'type', 'stock')
-            ->with('image', 'variables')->get();
-        // return  $data;
-    Cart::instance('shopping')->destroy();
-        $products = view('frontEnd.layouts.hostel.create', $products)->render();
-        if ($products != '') {
-            echo $products;
-        }
-    }
-   public function orderUpdates(Request $request)
+    public function orderCreate(Request $request)
     {
         $products['products'] = Product::select('id', 'name', 'slug', 'new_price', 'old_price', 'type', 'stock')
-            ->with('image', 'variables')->get();
+            ->with('image', 'variables')->where(['status' => 1, 'hostel_product' => 1])->get();
+        // return  $data;
+        Cart::instance('shopping')->destroy();
+        $products = view('frontEnd.layouts.hostel.create', $products)->render();
+        if ($products != '') {
+            echo $products;
+        }
+    }
+    public function orderUpdates(Request $request)
+    {
+        $products['products'] = Product::select('id', 'name', 'slug', 'new_price', 'old_price', 'type', 'stock')
+            ->with('image', 'variables')->where(['status' => 1, 'hostel_product' => 1])->get();
         // return  $data;
         $products = view('frontEnd.layouts.hostel.create', $products)->render();
         if ($products != '') {
@@ -464,7 +512,7 @@ class HostelController extends Controller
     }
 
 
-     private function setting()
+    private function setting()
     {
         return GeneralSetting::select('name')->first();
     }
@@ -489,15 +537,15 @@ class HostelController extends Controller
             'agree' => 'required',
             'confirmed' => 'required_with::password|same:password',
         ]);
-        $verify                 = rand(1111, 9999);
-        $store_data             = new Hostel();
-        $store_data->hostel_id   = $this->generateHostelId();
-        $store_data->name       = $request->name;
-        $store_data->email      = $request->email;
-        $store_data->phone      = $request->phone;
-        $store_data->agree      = $request->agree;
-        $store_data->status     = 0;
-        $store_data->verify     = $verify;
+        $verify = rand(1111, 9999);
+        $store_data = new Hostel();
+        $store_data->hostel_id = $this->generateHostelId();
+        $store_data->name = $request->name;
+        $store_data->email = $request->email;
+        $store_data->phone = $request->phone;
+        $store_data->agree = $request->agree;
+        $store_data->status = 0;
+        $store_data->verify = $verify;
         $store_data->password = bcrypt($request->password);
         $store_data->save();
 
@@ -557,7 +605,7 @@ class HostelController extends Controller
             'email_phone' => 'required',
             'password' => 'required',
         ]);
-        $auth_check = Hostel::select('phone','email', 'name', 'password', 'verify', 'status')->where('phone', $request->email_phone)->orWhere('email', $request->email_phone)->first();
+        $auth_check = Hostel::select('phone', 'email', 'name', 'password', 'verify', 'status')->where('phone', $request->email_phone)->orWhere('email', $request->email_phone)->first();
         return $auth_check;
 
         $email_phone = $request->email_phone;
@@ -610,41 +658,43 @@ class HostelController extends Controller
             return redirect()->back();
         }
     }
-    public function dashboard(Request $request){        
+    public function dashboard(Request $request)
+    {
         if ($request->start_date && $request->end_date) {
-            $total_order = Order::where('customer_id', Auth::guard('customer')->user()->id)->whereBetween('created_at', [$request->start_date,$request->end_date])->count();
-            $total_delivery = Order::where('customer_id', Auth::guard('customer')->user()->id)->where('order_status','7')->whereBetween('created_at', [$request->start_date,$request->end_date])->count();
-            $total_process = Order::where('customer_id', Auth::guard('customer')->user()->id)->whereNotIn('order_status',['1','8','9','10'])->whereBetween('created_at', [$request->start_date,$request->end_date])->count();
-            $total_return = Order::where('customer_id', Auth::guard('customer')->user()->id)->where('order_status','9')->whereBetween('created_at', [$request->start_date,$request->end_date])->count();
-            $total_amount = Order::where('customer_id', Auth::guard('customer')->user()->id)->whereBetween('created_at', [$request->start_date,$request->end_date])->sum('cod');
-            $delivery_amount = Order::where('customer_id', Auth::guard('customer')->user()->id)->where('order_status','7')->whereBetween('created_at', [$request->start_date,$request->end_date])->sum('cod');  
-            $process_amount = Order::where('customer_id', Auth::guard('customer')->user()->id)->whereNotIn('order_status',['1','7','8','9','10'])->whereBetween('created_at', [$request->start_date,$request->end_date])->sum('cod');
-            $return_amount = Order::where('customer_id', Auth::guard('customer')->user()->id)->where('order_status','9')->whereBetween('created_at', [$request->start_date,$request->end_date])->sum('cod');
-        }else{
+            $total_order = Order::where('customer_id', Auth::guard('customer')->user()->id)->whereBetween('created_at', [$request->start_date, $request->end_date])->count();
+            $total_delivery = Order::where('customer_id', Auth::guard('customer')->user()->id)->where('order_status', '7')->whereBetween('created_at', [$request->start_date, $request->end_date])->count();
+            $total_process = Order::where('customer_id', Auth::guard('customer')->user()->id)->whereNotIn('order_status', ['1', '8', '9', '10'])->whereBetween('created_at', [$request->start_date, $request->end_date])->count();
+            $total_return = Order::where('customer_id', Auth::guard('customer')->user()->id)->where('order_status', '9')->whereBetween('created_at', [$request->start_date, $request->end_date])->count();
+            $total_amount = Order::where('customer_id', Auth::guard('customer')->user()->id)->whereBetween('created_at', [$request->start_date, $request->end_date])->sum('cod');
+            $delivery_amount = Order::where('customer_id', Auth::guard('customer')->user()->id)->where('order_status', '7')->whereBetween('created_at', [$request->start_date, $request->end_date])->sum('cod');
+            $process_amount = Order::where('customer_id', Auth::guard('customer')->user()->id)->whereNotIn('order_status', ['1', '7', '8', '9', '10'])->whereBetween('created_at', [$request->start_date, $request->end_date])->sum('cod');
+            $return_amount = Order::where('customer_id', Auth::guard('customer')->user()->id)->where('order_status', '9')->whereBetween('created_at', [$request->start_date, $request->end_date])->sum('cod');
+        } else {
             $total_order = Order::where('customer_id', Auth::guard('customer')->user()->id)->count();
-            $total_delivery = Order::where('customer_id', Auth::guard('customer')->user()->id)->where('order_status','7')->count();
-            $total_process = Order::where('customer_id', Auth::guard('customer')->user()->id)->whereNotIn('order_status',['1','7','8','9','10'])->count();
-            $total_return = Order::where('customer_id', Auth::guard('customer')->user()->id)->where('order_status','9')->count();
-            $total_complete = Order::where('customer_id', Auth::guard('customer')->user()->id)->where('order_status','7')->count();
+            $total_delivery = Order::where('customer_id', Auth::guard('customer')->user()->id)->where('order_status', '7')->count();
+            $total_process = Order::where('customer_id', Auth::guard('customer')->user()->id)->whereNotIn('order_status', ['1', '7', '8', '9', '10'])->count();
+            $total_return = Order::where('customer_id', Auth::guard('customer')->user()->id)->where('order_status', '9')->count();
+            $total_complete = Order::where('customer_id', Auth::guard('customer')->user()->id)->where('order_status', '7')->count();
             $total_amount = Order::where('customer_id', Auth::guard('customer')->user()->id)->sum('cod');
-            $delivery_amount = Order::where('customer_id', Auth::guard('customer')->user()->id)->where('order_status','7')->sum('cod');  
-            $process_amount = Order::where('customer_id', Auth::guard('customer')->user()->id)->whereNotIn('order_status',['1','7','8','9','10'])->sum('cod');
-            $return_amount = Order::where('customer_id', Auth::guard('customer')->user()->id)->where('order_status','9')->sum('cod');
+            $delivery_amount = Order::where('customer_id', Auth::guard('customer')->user()->id)->where('order_status', '7')->sum('cod');
+            $process_amount = Order::where('customer_id', Auth::guard('customer')->user()->id)->whereNotIn('order_status', ['1', '7', '8', '9', '10'])->sum('cod');
+            $return_amount = Order::where('customer_id', Auth::guard('customer')->user()->id)->where('order_status', '9')->sum('cod');
         }
-        return view('frontEnd.layouts.hostel.dashboard',compact('total_order','total_delivery','total_process','total_return','total_complete','total_amount','delivery_amount','process_amount','return_amount'));
+        return view('frontEnd.layouts.hostel.dashboard', compact('total_order', 'total_delivery', 'total_process', 'total_return', 'total_complete', 'total_amount', 'delivery_amount', 'process_amount', 'return_amount'));
     }
-    
+
     public function hprofile()
     {
         $profile = Customer::find(Auth::guard('customer')->user()->id);
         // return $profile;
         $districts = $this->districts();
-        return view('frontEnd.layouts.hostel.hprofile', compact('profile','districts'));
+        return view('frontEnd.layouts.hostel.hprofile', compact('profile', 'districts'));
     }
-    public function settings(){
+    public function settings()
+    {
         $profile = Customer::find(Auth::guard('customer')->user()->id);
         $districts = $this->districts();
-        return view('frontEnd.layouts.hostel.settings', compact('profile','districts'));
+        return view('frontEnd.layouts.hostel.settings', compact('profile', 'districts'));
     }
     public function basic_update(Request $request)
     {
@@ -659,13 +709,13 @@ class HostelController extends Controller
         } else {
             $fileUrl = $update_data->image;
         }
-        $update_data->address        = $request->address??$update_data->address;
-        $update_data->image          = $fileUrl;
+        $update_data->address = $request->address ?? $update_data->address;
+        $update_data->image = $fileUrl;
         $update_data->save();
         Toastr::success('Basic info update successfully', 'Success');
         return redirect()->route('hostel.settings');
     }
-   
+
     public function change_pass()
     {
         return view('frontEnd.layouts.hostel.change_password');
@@ -702,7 +752,8 @@ class HostelController extends Controller
         return view('frontEnd.layouts.hostel.forgot_password');
     }
 
-    public function forgot_verify(Request $request) {
+    public function forgot_verify(Request $request)
+    {
         $auth_info = Customer::where('phone', $request->phone)->first();
         if (!$auth_info) {
             Toastr::error('Your phone number not found', 'Failed');
@@ -730,14 +781,16 @@ class HostelController extends Controller
         return redirect()->route('hostel.forgot.reset');
     }
 
-    public function forgot_reset(){
+    public function forgot_reset()
+    {
         if (!Session::get('verify_phone')) {
             Toastr::error('Something wrong please try again', 'Failed');
             return redirect()->route('hostel.forgot.password');
         }
         return view('frontEnd.layouts.hostel.forgot_reset');
     }
-    public function forgot_store(Request $request){
+    public function forgot_store(Request $request)
+    {
 
         $auth_info = Hostel::where('phone', session::get('verify_phone'))->first();
         if ($auth_info->forgot != $request->otp) {
@@ -760,7 +813,8 @@ class HostelController extends Controller
         Toastr::success('You are logout successfully', 'Logout!');
         return redirect('/');
     }
-    public function generateHostelId(){
+    public function generateHostelId()
+    {
         $lastMember = Hostel::orderBy('id', 'desc')->first();
         if ($lastMember) {
             $lastId = (int) substr($lastMember->id, -5);
@@ -770,11 +824,12 @@ class HostelController extends Controller
         }
         return '10000' . str_pad($newId, 1, '0', STR_PAD_LEFT);
     }
-    function invoiceIdGenerate(){
+    function invoiceIdGenerate()
+    {
         do {
-            $uniqueId = 'INV-'.date('dmy').Str::upper(Str::random(6));
+            $uniqueId = 'INV-' . date('dmy') . Str::upper(Str::random(6));
             $exists = Payment::where('invoice_id', $uniqueId)->exists();
-        }while ($exists);
+        } while ($exists);
 
         return $uniqueId;
     }

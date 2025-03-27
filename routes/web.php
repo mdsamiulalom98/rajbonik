@@ -139,8 +139,6 @@ Route::group(['namespace' => 'Frontend', 'middleware' => ['ipcheck', 'check_refe
 Route::group(['namespace' => 'FrontEnd', 'middleware' => ['check_refer'], 'prefix' => 'hostel'], function () {
     Route::get('/product', [HostelController::class, 'hostelProduct'])->name('hostel.product');
     Route::get('/order', [HostelController::class, 'hostelOrder'])->name('hostel.order');
-
-
     Route::post('/signin', [HostelController::class, 'signin'])->name('hostel.signin');
     Route::get('/register', [HostelController::class, 'register'])->name('hostel.register');
     Route::post('/store', [HostelController::class, 'store'])->name('hostel.store');
@@ -156,37 +154,24 @@ Route::group(['namespace' => 'FrontEnd', 'middleware' => ['check_refer'], 'prefi
 });
 //hostel manage route
 Route::group(['namespace' => 'FrontEnd', 'prefix' => 'hostel'], function () {
-
     Route::get('/dashboard', [HostelController::class, 'dashboard'])->name('hostel.dashboard');
     Route::get('/profile', [HostelController::class, 'profile'])->name('hostel.profile');
     Route::get('/settings', [HostelController::class, 'settings'])->name('hostel.settings');
     Route::post('/basic-update', [HostelController::class, 'basic_update'])->name('hostel.basic_update');
-
     Route::get('order/cart-content-edit', [HostelController::class, 'cart_content_edit'])->name('hostel.order.cart_content_edit');
-
     Route::get('order/orders-edit', [HostelController::class, 'orders_edit_hostel'])->name('order.edit.hostel');
-
     Route::get('order/updates', [HostelController::class, 'orders_updates'])->name('orders.updates');
-
     Route::get('orders/updates', [HostelController::class, 'orders_updates_page'])->name('hostel.orders.updates');
-
     Route::get('order/cart-edit', [HostelController::class, 'cart_edit'])->name('hostel.order.cart_edit');
-
     Route::get('order/cart-update', [HostelController::class, 'cart_update'])->name('hostel.order.cart_update');
     Route::get('order/cart-create-form', [HostelController::class, 'cart_creatForm'])->name('hostel.order.cart_create_form');
-
     Route::get('order/save', [HostelController::class, 'order_save'])->name('hostel.order.save');
     Route::get('order/clear', [HostelController::class, 'order_clear'])->name('hostel.order.clear');
-
     Route::get('hostel/hprofile', [HostelController::class, 'hprofile'])->name('hostel.hprofile');
-
     Route::get('order/cart-remove', [HostelController::class, 'cart_remove'])->name('hostel.order.cart_remove');
-
     Route::get('order/cart-add', [HostelController::class, 'cart_add'])->name('hostel.order.cart_add');
     Route::get('order/cart-content', [HostelController::class, 'cart_content'])->name('hostel.order.cart_content');
-
     Route::post('order/destroy', [HostelController::class, 'destroy'])->name('hostel.order.destroy');
-
     Route::post('/payment-method', [HostelController::class, 'payment_method'])->name('hostel.payment_method');
     Route::get('/change-password', [HostelController::class, 'change_pass'])->name('hostel.change_pass');
     Route::post('/password-update', [HostelController::class, 'password_update'])->name('hostel.password_update');
@@ -199,7 +184,6 @@ Route::group(['namespace' => 'FrontEnd', 'prefix' => 'hostel'], function () {
     Route::get('/merchant/notification', [HostelController::class, 'notification'])->name('hostel.notification');
     Route::get('/parcel/pricing', [HostelController::class, 'pricing'])->name('hostel.parcel.pricing');
     Route::get('consignment-search', [HostelController::class, 'consignment_search'])->name('hostel.consignment.search');
-
     Route::get('parcel/cost-calculate', [HostelController::class, 'cost_calculate'])->name('hostel.parcel.cost_calculate');
     Route::get('parcel/manage/{slug}', [HostelController::class, 'index'])->name('hostel.parcel.index');
     Route::get('/parcel-status', [HostelController::class, 'parcel_status'])->name('hostel.parcel.status');
@@ -224,16 +208,15 @@ Route::group(['prefix' => 'customer', 'namespace' => 'Frontend', 'middleware' =>
     Route::post('/forgot-password/store', [CustomerController::class, 'forgot_store'])->name('customer.forgot.store');
     Route::post('/forgot-password/resendotp', [CustomerController::class, 'forgot_resend'])->name('customer.forgot.resendotp');
     Route::get('/checkout', [CustomerController::class, 'checkout'])->name('customer.checkout');
-
     Route::get('/address', [CustomerController::class, 'address'])->name('customer.address');
     Route::post('/select-address', [CustomerController::class, 'select_address'])->name('customer.address.select');
     Route::post('/change-address', [CustomerController::class, 'change_address'])->name('customer.address.change');
-
     Route::post('/order-save', [CustomerController::class, 'order_save'])->name('customer.ordersave');
     Route::get('/order-success/{id}', [CustomerController::class, 'order_success'])->name('customer.order_success');
     Route::get('/order-track', [CustomerController::class, 'order_track'])->name('customer.order_track');
     Route::get('/order-track/result', [CustomerController::class, 'order_track_result'])->name('customer.order_track_result');
 });
+
 // customer auth
 Route::group(['prefix' => 'customer', 'namespace' => 'Frontend', 'middleware' => ['customer', 'ipcheck', 'check_refer']], function () {
     Route::get('/account', [CustomerController::class, 'account'])->name('customer.account');

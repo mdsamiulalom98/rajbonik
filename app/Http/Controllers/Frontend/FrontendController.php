@@ -14,7 +14,6 @@ use App\Models\ShippingCharge;
 use App\Models\Childcategory;
 use App\Models\OrderDetails;
 use App\Models\Subcategory;
-use App\Models\CouponCode;
 use App\Models\CreatePage;
 use App\Models\Timeslot;
 use App\Models\Customer;
@@ -30,9 +29,6 @@ use App\Models\CustomerAddress;
 use App\Models\PaymentGateway;
 use App\Models\Brand;
 use Carbon\Carbon;
-use Cache;
-use DB;
-use Log;
 
 class FrontendController extends Controller
 {
@@ -48,7 +44,7 @@ class FrontendController extends Controller
             ->limit(2)
             ->get();
 
-        $hotdeal_top = Product::where(['status' => 1, 'topsale' => 1])
+        $hotdeal_top = Product::where(['status' => 1, 'topsale' => 1, 'hostel_product' => 0])
             ->orderBy('id', 'DESC')
             ->select('id', 'name', 'slug', 'new_price', 'old_price', 'type', 'category_id')
             ->withCount('variable')
@@ -71,7 +67,7 @@ class FrontendController extends Controller
     {
 
         $category = Category::where(['slug' => $slug, 'status' => 1])->first();
-        $products = Product::where(['status' => 1, 'category_id' => $category->id])
+        $products = Product::where(['status' => 1, 'category_id' => $category->id, 'hostel_product' => 0])
             ->select('id', 'name', 'slug', 'new_price', 'old_price', 'type', 'category_id')->withCount('variable');
         if ($request->sort == 1) {
             $products = $products->orderBy('created_at', 'desc');
@@ -95,7 +91,7 @@ class FrontendController extends Controller
     public function subcategory($slug, Request $request)
     {
         $subcategory = Subcategory::where(['slug' => $slug, 'status' => 1])->first();
-        $products = Product::where(['status' => 1, 'subcategory_id' => $subcategory->id])
+        $products = Product::where(['status' => 1, 'subcategory_id' => $subcategory->id, 'hostel_product' => 0])
             ->select('id', 'name', 'slug', 'new_price', 'old_price', 'type', 'category_id', 'subcategory_id')->withCount('variable');
         // return $request->sort;
         if ($request->sort == 1) {
@@ -122,8 +118,10 @@ class FrontendController extends Controller
     public function products($slug, Request $request)
     {
         $childcategory = Childcategory::where(['slug' => $slug, 'status' => 1])->first();
-        $products = Product::where(['status' => 1, 'childcategory_id' => $childcategory->id])->with('category')
-            ->select('id', 'name', 'slug', 'new_price', 'old_price', 'type', 'category_id', 'subcategory_id', 'childcategory_id')->withCount('variable');
+        $products = Product::where(['status' => 1, 'childcategory_id' => $childcategory->id, 'hostel_product' => 0])
+            ->with('category')
+            ->select('id', 'name', 'slug', 'new_price', 'old_price', 'type', 'category_id', 'subcategory_id', 'childcategory_id')
+            ->withCount('variable');
 
         if ($request->sort == 1) {
             $products = $products->orderBy('created_at', 'desc');
@@ -149,7 +147,7 @@ class FrontendController extends Controller
     public function brand($slug, Request $request)
     {
         $brand = Brand::where(['slug' => $slug, 'status' => 1])->first();
-        $products = Product::where(['status' => 1, 'brand_id' => $brand->id])
+        $products = Product::where(['status' => 1, 'brand_id' => $brand->id, 'hostel_product' => 0])
             ->select('id', 'name', 'slug', 'new_price', 'old_price', 'type', 'brand_id')->withCount('variable');
         if ($request->sort == 1) {
             $products = $products->orderBy('created_at', 'desc');
@@ -172,8 +170,7 @@ class FrontendController extends Controller
 
     public function bestdeals(Request $request)
     {
-
-        $products = Product::where(['status' => 1, 'topsale' => 1])
+        $products = Product::where(['status' => 1, 'topsale' => 1, 'hostel_product' => 0])
             ->orderBy('id', 'DESC')
             ->select('id', 'name', 'slug', 'new_price', 'old_price', 'type')
             ->withCount('variable');
@@ -198,16 +195,14 @@ class FrontendController extends Controller
         return view('frontEnd.layouts.pages.bestdeals', compact('products'));
     }
 
-
     public function details($slug)
     {
-
         $details = Product::where(['slug' => $slug, 'status' => 1])
             ->with('image', 'images', 'category', 'subcategory', 'childcategory')
             ->withCount('variableimages')
             ->firstOrFail();
 
-        $products = Product::where(['category_id' => $details->category_id, 'status' => 1])
+        $products = Product::where(['category_id' => $details->category_id, 'status' => 1, 'hostel_product' => 0])
             ->with('image')
             ->select('id', 'name', 'slug', 'status', 'category_id', 'new_price', 'old_price', 'type')
             ->withCount('variable')
@@ -271,7 +266,7 @@ class FrontendController extends Controller
         // return $request->all();
         $products = Product::select('id', 'name', 'slug', 'new_price', 'old_price', 'type')
             ->withCount('variable')
-            ->where('status', 1)
+            ->where(['status'=> 1, 'hostel_product' => 0])
             ->with('image');
         // return  $products;
         if ($request->keyword) {
@@ -292,7 +287,7 @@ class FrontendController extends Controller
     {
         $products = Product::select('id', 'name', 'slug', 'new_price', 'old_price', 'type')
             ->withCount('variable')
-            ->where('status', 1)
+            ->where(['status'=> 1, 'hostel_product' => 0])
             ->with('image');
         if ($request->keyword) {
             $products = $products->where('name', 'LIKE', '%' . $request->keyword . "%");
@@ -392,8 +387,6 @@ class FrontendController extends Controller
         $select_charge = ShippingCharge::where('status', 1)->first();
         Session::put('shipping', $select_charge->amount);
         return view('frontEnd.layouts.pages.campaign.campaign' . $campaign->template, compact('campaign', 'productsizes', 'productcolors', 'shippingcharge', 'old_price', 'new_price'));
-
-
     }
     public function campaign_stock(Request $request)
     {

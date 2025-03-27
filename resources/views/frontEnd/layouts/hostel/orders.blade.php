@@ -39,11 +39,6 @@
                         <table id="datatable-buttons" class="table table-striped w-100">
                             <thead>
                                 <tr>
-                                    <th style="width:2%;">
-                                        <div class="form-check">
-                                            <label class="form-check-label"><input type="checkbox" class="form-check-input checkall" value="" /></label>
-                                        </div>
-                                    </th>
                                     <th style="width: 10%;">Order Number</th>
                                     <th style="width: 15%;">Invoice</th>
                                     <th style="width: 15%;">Delivary Time</th>
@@ -57,7 +52,6 @@
                             <tbody>
                                 @foreach ($show_data as $key => $value)
                                 <tr>
-                                    <td><input type="checkbox" class="checkbox" value="{{ $value->id }}" /></td>
                                     <td>{{ $loop->iteration }}</td>
                                     <td>
                                         {{ $value->invoice_id }}<br />
@@ -74,7 +68,7 @@
                                         <strong>{{ $value->shipping ? $value->shipping->name : '' }}</strong>
                                         <p>{{ $value->shipping ? $value->shipping->address : '' }}</p>
                                     </td>
-                                    
+
                                     <td>৳{{ $value->amount }}</td>
                                     <td>{{ $value->status ? $value->status->name : '' }}</td>
                                      <td>
@@ -115,5 +109,6 @@
         $(".checkall").on('change', function() {
             $(".checkbox").prop('checked', $(this).is(":checked"));
         });
+    });
 </script>
 @endsection

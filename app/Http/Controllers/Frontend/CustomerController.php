@@ -27,7 +27,6 @@ use App\Models\Review;
 use App\Models\Order;
 use App\Models\GeneralSetting;
 use App\Models\CouponCode;
-use Mail;
 
 class CustomerController extends Controller
 {
@@ -174,7 +173,7 @@ class CustomerController extends Controller
         $message = 'Account Create Successfully';
         return response()->json(['status' => 'success', 'message' => $message]);
     }
-    
+
    public function address_update(Request $request)
     {
         $this->validate($request, [
@@ -460,7 +459,7 @@ class CustomerController extends Controller
             Toastr::error('Your shopping empty', 'Failed!');
             return redirect()->back();
         }
-        
+
 
         $subtotal = Cart::instance('shopping')->subtotal();
         $subtotal = str_replace(',', '', $subtotal);
@@ -510,7 +509,7 @@ class CustomerController extends Controller
             Toastr::error('Your address is empty', 'Failed!');
             return redirect()->back();
         }
-        
+
         // order data save
         $order = new Order();
         $order->invoice_id = rand(11111, 99999);

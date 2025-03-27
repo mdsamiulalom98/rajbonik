@@ -3,15 +3,12 @@
 namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
-use App\Util\BkashCredential;
 use Illuminate\Http\Request;
-use App\Models\Customer;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\PaymentGateway;
 use Session;
 use Toastr;
-use Cart;
 use Illuminate\Support\Str;
 
 class BkashController extends Controller

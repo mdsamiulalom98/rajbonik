@@ -161,7 +161,7 @@
                                         @enderror
                                     </div>
                                 </div>
-                                
+
                                 <div class="product_img">
                                     @foreach ($edit_data->images as $image)
                                         <img src="{{ asset($image->image) }}" class="edit-image border"
@@ -192,8 +192,10 @@
                                     <label for="type" class="form-label">Product Type</label>
                                     <select class="form-control select2 @error('type') is-invalid @enderror" disabled
                                         value="{{ old('type') }}" id="product_type" name="type">
-                                        <option value="1" @if ($edit_data->type == 1) selected @endif>Normal Product</option>
-                                        <option value="0" @if ($edit_data->type == 0) selected @endif>Variable Product</option>
+                                        <option value="1" @if ($edit_data->type == 1) selected @endif>Normal
+                                            Product</option>
+                                        <option value="0" @if ($edit_data->type == 0) selected @endif>Variable
+                                            Product</option>
                                     </select>
                                     @error('type')
                                         <span class="invalid-feedback" role="alert">
@@ -202,7 +204,7 @@
                                     @enderror
                                 </div>
                             </div>
-                           
+
                             <!-- col-end -->
 
                             @if ($edit_data->type == 0)
@@ -266,7 +268,7 @@
                                                     @enderror
                                                 </div>
                                             </div>
-                                            <!-- col-end --> 
+                                            <!-- col-end -->
                                             <div class="col-sm-2">
                                                 <div class="form-group">
                                                     <label for="up_wholesale_prices" class="form-label">Wholesale Price
@@ -313,7 +315,7 @@
                                                     @enderror
                                                 </div>
                                             </div>
-                                             <div class="col-sm-4">
+                                            <div class="col-sm-4">
                                                 <div class="form-group">
                                                     <label for="up_images">Color Image </label>
                                                     <div class="input-group control-group">
@@ -328,8 +330,9 @@
                                                         @enderror
                                                     </div>
                                                 </div>
-                                                @if($variable->image)
-                                                <img src="{{ asset($variable->image) }}" class="edit-image border mt-1">
+                                                @if ($variable->image)
+                                                    <img src="{{ asset($variable->image) }}"
+                                                        class="edit-image border mt-1">
                                                 @endif
                                             </div>
                                             <!-- col-end -->
@@ -345,13 +348,14 @@
                                                     @enderror
                                                 </div>
                                             </div>
-                                           
+
                                             <div class="col-sm-4">
                                                 <div class="form-group">
                                                     <label for="pro_barcodes" class="form-label">Product Barcode </label>
                                                     <input type="text"
                                                         class="form-control @error('stock') is-invalid @enderror"
-                                                        name="pro_barcodes[]" value="{{ $variable->pro_barcode }}" id="pro_barcodes">
+                                                        name="pro_barcodes[]" value="{{ $variable->pro_barcode }}"
+                                                        id="pro_barcodes">
                                                     @error('pro_barcodes[]')
                                                         <span class="invalid-feedback" role="alert">
                                                             <strong>{{ $message }}</strong>
@@ -425,7 +429,7 @@
                                             </div>
                                         </div>
                                         <!-- col-end -->
-                                         <div class="col-sm-2">
+                                        <div class="col-sm-2">
                                             <div class="form-group">
                                                 <label for="wholesale_prices" class="form-label">Wholesale Price *</label>
                                                 <input type="text"
@@ -470,7 +474,7 @@
                                                 @enderror
                                             </div>
                                         </div>
-                                         <div class="col-sm-4">
+                                        <div class="col-sm-4">
                                             <div class="form-group">
                                                 <label for="images">Color Image </label>
                                                 <div class="input-group control-group">
@@ -629,36 +633,36 @@
                                                     @enderror
                                                 </div>
                                             </div>
-                                            
-                                        <div class="col-sm-8 ">
-                                            <div class="form-group">
-                                                <label for="images">Color Image </label>
-                                                <div class="input-group control-group">
-                                                    <input type="file" name="images[]"
-                                                        class="form-control @error('images') is-invalid @enderror" />
-                                                    <div class="input-group-btn">
+
+                                            <div class="col-sm-8 ">
+                                                <div class="form-group">
+                                                    <label for="images">Color Image </label>
+                                                    <div class="input-group control-group">
+                                                        <input type="file" name="images[]"
+                                                            class="form-control @error('images') is-invalid @enderror" />
+                                                        <div class="input-group-btn">
+                                                        </div>
+                                                        @error('images[]')
+                                                            <span class="invalid-feedback" role="alert">
+                                                                <strong>{{ $message }}</strong>
+                                                            </span>
+                                                        @enderror
                                                     </div>
-                                                    @error('images[]')
+                                                </div>
+                                            </div>
+                                            <!-- col end -->
+                                            <div class="col-sm-4">
+                                                <div class="form-group">
+                                                    <label for="pro_barcodes" class="form-label">Product Barcode</label>
+                                                    <input type="text" class="form-control" name="pro_barcodes[]">
+                                                    @error('pro_barcodes')
                                                         <span class="invalid-feedback" role="alert">
                                                             <strong>{{ $message }}</strong>
                                                         </span>
                                                     @enderror
                                                 </div>
                                             </div>
-                                        </div>
-                                        <!-- col end -->
-                                        <div class="col-sm-4">
-                                            <div class="form-group">
-                                                <label for="pro_barcodes" class="form-label">Product Barcode</label>
-                                                <input type="text" class="form-control" name="pro_barcodes[]">
-                                                @error('pro_barcodes')
-                                                    <span class="invalid-feedback" role="alert">
-                                                        <strong>{{ $message }}</strong>
-                                                    </span>
-                                                @enderror
-                                            </div>
-                                        </div>
-                                        <!-- col end -->
+                                            <!-- col end -->
                                             <div class="input-group-btn mt-2">
                                                 <button class="btn btn-danger remove_btn  btn-xs text-white"
                                                     type="button"><i class="fa fa-trash"></i></button>
@@ -752,7 +756,7 @@
                                 <div class="form-group mb-3">
                                     <label for="stock_alert" class="form-label">Stock Alert </label>
                                     <input type="text" class="form-control @error('stock_alert') is-invalid @enderror"
-                                        name="stock_alert" value="{{$edit_data->stock_alert}}" id="stock_alert" />
+                                        name="stock_alert" value="{{ $edit_data->stock_alert }}" id="stock_alert" />
                                     @error('stock_alert')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
@@ -764,10 +768,8 @@
                             <div class="col-sm-8">
                                 <div class="form-group mb-3">
                                     <label for="meta_title" class="form-label">Meta Title (SEO)</label>
-                                    <input type="text"
-                                        class="form-control @error('meta_title') is-invalid @enderror"
-                                        name="meta_title" value="{{ $edit_data->meta_title }}"
-                                        id="meta_title" />
+                                    <input type="text" class="form-control @error('meta_title') is-invalid @enderror"
+                                        name="meta_title" value="{{ $edit_data->meta_title }}" id="meta_title" />
                                     @error('meta_title')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
@@ -804,7 +806,7 @@
                             <!-- col end -->
 
                             <!-- col end -->
-                            <div class="col-sm-3 mb-3">
+                            <div class="col-sm-2 mb-3">
                                 <div class="form-group">
                                     <label for="status" class="d-block">Status</label>
                                     <label class="switch">
@@ -820,7 +822,7 @@
                                 </div>
                             </div>
                             <!-- col end -->
-                            <div class="col-sm-3 mb-3">
+                            <div class="col-sm-2 mb-3">
                                 <div class="form-group">
                                     <label for="topsale" class="d-block">Best Deals</label>
                                     <label class="switch">
@@ -836,7 +838,7 @@
                                 </div>
                             </div>
                             <!-- col end -->
-                             <div class="col-sm-3 mb-3">
+                            <div class="col-sm-2 mb-3">
                                 <div class="form-group">
                                     <label for="wholesale" class="d-block">Wholesle</label>
                                     <label class="switch">
@@ -845,6 +847,36 @@
                                         <span class="slider round"></span>
                                     </label>
                                     @error('wholesale')
+                                        <span class="invalid-feedback" role="alert">
+                                            <strong>{{ $message }}</strong>
+                                        </span>
+                                    @enderror
+                                </div>
+                            </div>
+                            <!-- col end -->
+                            <div class="col-sm-2 mb-3">
+                                <div class="form-group">
+                                    <label for="hostel_product" class="d-block">Hostel Product</label>
+                                    <label class="switch">
+                                        <input type="checkbox" value="1" {{ $edit_data->hostel_product == 1 ? 'checked' : '' }} name="hostel_product" />
+                                        <span class="slider round"></span>
+                                    </label>
+                                    @error('hostel_product')
+                                        <span class="invalid-feedback" role="alert">
+                                            <strong>{{ $message }}</strong>
+                                        </span>
+                                    @enderror
+                                </div>
+                            </div>
+                            <!-- col end -->
+                            <div class="col-sm-2 mb-3">
+                                <div class="form-group">
+                                    <label for="is_vegetable" class="d-block">Vegetable Product</label>
+                                    <label class="switch">
+                                        <input type="checkbox" value="1" {{ $edit_data->is_vegetable == 1 ? 'checked' : '' }} name="is_vegetable" />
+                                        <span class="slider round"></span>
+                                    </label>
+                                    @error('is_vegetable')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
                                         </span>

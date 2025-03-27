@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\DB;
 use Brian2694\Toastr\Facades\Toastr;
 use Gloudemans\Shoppingcart\Facades\Cart;
@@ -94,7 +93,7 @@ class ShoppingController extends Controller
         // return redirect()->back();
         return response()->json($cartinfo);
     }
-    
+
     public function addTocartGetQuick(Request $request){
 
         $productInfo = DB::table('products')->where('id', $request->id)->first();
@@ -169,9 +168,9 @@ class ShoppingController extends Controller
                 'free_shipping' =>  0
             ],
         ]);
-      
-       
-       
+
+
+
         Toastr::success('Product successfully add to cart', 'Success!');
         if ($request->add_cart) {
             return back();
@@ -235,7 +234,7 @@ class ShoppingController extends Controller
         return view('frontEnd.layouts.ajax.wishlist_mobile', compact('data'));
     }
 
-    
+
     public function cart_increment_camp(Request $request)
     {
         $item = Cart::instance('shopping')->get($request->id);
@@ -268,5 +267,5 @@ class ShoppingController extends Controller
         $data = Cart::instance('shopping')->content();
         return view('frontEnd.layouts.ajax.cart_toggle_button', compact('data'));
     }
-    
+
 }

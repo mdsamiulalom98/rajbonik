@@ -10,7 +10,6 @@
         $coupon = Session::get('coupon_amount') ? Session::get('coupon_amount') : 0;
         $discount = Session::get('discount') ? Session::get('discount') : 0;
         $cart = Cart::instance('shopping')->content();
-
     @endphp
     <div class="container">
         <div class="row">
@@ -41,7 +40,8 @@
                                     <!-- col-end -->
                                     <div class="col-sm-12">
                                         <div class="form-group mb-3">
-                                            <label for="phone"><i class="fa-solid fa-phone"></i> Mobile Number *</label>
+                                            <label for="phone"><i class="fa-solid fa-phone"></i> Mobile Number
+                                                *</label>
                                             <input type="text" minlength="11" id="number" maxlength="11"
                                                 pattern="0[0-9]+"
                                                 title="please enter number only and 0 must first character"
@@ -58,7 +58,7 @@
                                     <!-- col-end -->
                                     <div class="col-sm-12">
                                         <div class="form-group mb-3">
-                                            <label for="address"><i class="fa-solid fa-map"></i> Full Address  *</label>
+                                            <label for="address"><i class="fa-solid fa-map"></i> Full Address *</label>
                                             <input type="address" id="address"
                                                 class="form-control @error('address') is-invalid @enderror"
                                                 name="address" placeholder="" value="{{ old('address') }}" required />
@@ -71,7 +71,8 @@
                                     </div>
                                     <div class="col-sm-12">
                                         <div class="form-group mb-3">
-                                            <label for="area"><i class="fa-solid fa-truck"></i> Delivary Area  *</label>
+                                            <label for="area"><i class="fa-solid fa-truck"></i> Delivary Area
+                                                *</label>
                                             <select type="area" id="area"
                                                 class="form-control @error('area') is-invalid @enderror" name="area"
                                                 required>
@@ -93,7 +94,7 @@
                                             <label id="payment_method">Payment Method</label>
                                         </div>
                                         <div class="payment-methods">
-                                           
+
                                             <div class="form-check p_cash payment_method" data-id="cod">
                                                 <input class="form-check-input" type="radio" name="payment_method"
                                                     id="inlineRadio1" value="Cash On Delivery" checked required />
@@ -103,9 +104,8 @@
                                             </div>
                                             @if ($bkash_gateway)
                                                 <div class="form-check p_bkash payment_method" data-id="bkash">
-                                                    <input class="form-check-input" type="radio"
-                                                        name="payment_method" id="inlineRadio2" value="bkash"
-                                                        required />
+                                                    <input class="form-check-input" type="radio" name="payment_method"
+                                                        id="inlineRadio2" value="bkash" required />
                                                     <label class="form-check-label" for="inlineRadio2">
                                                         Bkash
                                                     </label>
@@ -122,7 +122,7 @@
                                             @endif
                                         </div>
                                     </div>
-                                    
+
                                     <div class="col-sm-12">
                                         <div class="form-group">
                                             <button class="order_place" type="submit">Confirm Order</button>
@@ -158,8 +158,9 @@
                                     @foreach (Cart::instance('shopping')->content() as $value)
                                         <tr>
                                             <td>
-                                                <a class="cart_remove" data-id="{{ $value->rowId }}"><i
-                                                        class="fas fa-trash text-danger"></i></a>
+                                                <a class="cart_remove" data-id="{{ $value->rowId }}">
+                                                    <i class="fas fa-trash text-danger"></i>
+                                                </a>
                                             </td>
                                             <td class="text-left">
                                                 <a href="{{ route('product', $value->options->slug) }}"> <img
@@ -183,7 +184,8 @@
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td><span>৳ </span><strong>{{ $value->price }}</strong>
+                                            <td>
+                                                <span>৳ </span><strong>{{ $value->price }}</strong>
                                             </td>
                                         </tr>
                                     @endforeach
@@ -192,29 +194,36 @@
                                     <tr>
                                         <th colspan="3" class="text-end px-4">Total</th>
                                         <td class="px-4">
-                                            <span id="net_total"><span>৳
-                                                </span><strong>{{ $subtotal }}</strong></span>
+                                            <span id="net_total">
+                                                <span>৳ </span>
+                                                <strong>{{ $subtotal }}</strong></span>
                                         </td>
                                     </tr>
                                     <tr>
                                         <th colspan="3" class="text-end px-4">Delivery Charge</th>
                                         <td class="px-4">
-                                            <span id="cart_shipping_cost"><span>৳
-                                            </span><strong>{{ $shipping }}</strong></span>
+                                            <span id="cart_shipping_cost">
+                                                <span>৳</span>
+                                                <strong>{{ $shipping }}</strong>
+                                            </span>
                                         </td>
                                     </tr>
                                     <tr>
                                         <th colspan="3" class="text-end px-4">Discount</th>
                                         <td class="px-4">
-                                            <span id="cart_shipping_cost"><span>৳
-                                                </span><strong>{{ $discount + $coupon }}</strong></span>
+                                            <span id="cart_shipping_cost">
+                                                <span>৳ </span>
+                                                <strong>{{ $discount + $coupon }}</strong>
+                                            </span>
                                         </td>
                                     </tr>
                                     <tr>
                                         <th colspan="3" class="text-end px-4">TOTAL</th>
                                         <td class="px-4">
-                                            <span id="grand_total"><span>৳
-                                                </span><strong>{{ $subtotal +$shipping - ($discount + $coupon) }}</strong></span>
+                                            <span id="grand_total">
+                                                <span>৳</span>
+                                                <strong>{{ $subtotal + $shipping - ($discount + $coupon) }}</strong>
+                                            </span>
                                         </td>
                                     </tr>
                                 </tfoot>

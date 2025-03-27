@@ -14,7 +14,7 @@
         height: auto !important;
         background-color: #fff;
     }
-   
+
 </style>
 @if ($session_address)
     <div class="address_details table-responsive-sm">
@@ -38,7 +38,7 @@
         </div>
     </div>
 @else
-@if(Auth::guard('customer')->user())
+@if(Auth::guard('customer')->check())
     <div class="address_details table-responsive-sm">
         <div class="card">
             <div class="card-header">
@@ -193,14 +193,14 @@
                 @enderror
             </div>
         </div>
-        
+
        <div class="col-sm-6">
             <div class="select__date__time">
             <label for="order_date" class="form-label">Select Date</label>
             <select name="order_date" id="order_date" class="form-select">
                 @for ($i = 0; $i < 5; $i++)
                     <option value="{{ now()->addDays($i)->format('Y-m-d') }}">
-                        {{ $i == 0 ? 'Today' : ($i == 1 ? 'Tomorrow' : now()->addDays($i)->format('l')) }}, 
+                        {{ $i == 0 ? 'Today' : ($i == 1 ? 'Tomorrow' : now()->addDays($i)->format('l')) }},
                         {{ now()->addDays($i)->format('j M') }}
                     </option>
                 @endfor
@@ -222,7 +222,7 @@
                                     <label id="payment_method">Payment Method</label>
                                 </div>
                                 <div class="payment-methods">
-                                   
+
                                     <div class="form-check p_cash payment_method" data-id="cod">
                                         <input class="form-check-input" type="radio" name="payment_method"
                                             id="inlineRadio1" value="Cash On Delivery" checked required />
